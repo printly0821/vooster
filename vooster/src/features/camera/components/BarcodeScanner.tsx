@@ -221,9 +221,9 @@ export function BarcodeScanner({
         }
       });
 
-    // Cleanup: stop scanning when component unmounts or dependencies change
+    // Cleanup: ONLY when component unmounts or stream/video changes
     return () => {
-      console.log('🧹 BarcodeScanner: Cleanup');
+      console.log('🧹 BarcodeScanner: Cleanup (unmount or stream change)');
       abortController.abort();
 
       if (hasStartedRef.current) {
@@ -232,7 +232,7 @@ export function BarcodeScanner({
         hasStartedRef.current = false;
       }
     };
-  }, [stream, videoElement, startScanning, stopScanning]); // Explicit dependencies
+  }, [stream, videoElement]); // Only depend on stream/video, NOT on functions
 
   // Don't render anything if stream or videoElement is missing
   if (!stream || !videoElement) {

@@ -97,23 +97,33 @@ function BarcodeScannerFlow() {
       return;
     }
 
-    // Check if already connected to avoid unnecessary reset
-    if (videoRef.current.srcObject === stream) {
-      console.log('✅ Video already connected to this stream');
+    // Check if already connected by comparing stream IDs (more reliable than object reference)
+    const currentStream = videoRef.current.srcObject as MediaStream | null;
+    if (currentStream && currentStream.id === stream.id) {
+      console.log('✅ Video already connected to this stream (ID match)');
       return;
     }
 
-    console.log('📹 Connecting stream to video element...');
-    videoRef.current.srcObject = stream;
+    console.log('📹 Connecting stream to video element...', stream.id);
 
-    // Auto-play video
-    videoRef.current.play()
-      .then(() => {
-        console.log('✅ Video playing successfully');
-      })
-      .catch((err) => {
-        console.error('❌ Failed to play video:', err);
-      });
+    const video = videoRef.current;
+    video.srcObject = stream;
+
+    // Auto-play video (only if not already playing)
+    if (video.paused) {
+      video.play()
+        .then(() => {
+          console.log('✅ Video playing successfully');
+        })
+        .catch((err) => {
+          // Ignore AbortError (happens when video is being reloaded)
+          if (err.name !== 'AbortError') {
+            console.error('❌ Failed to play video:', err);
+          }
+        });
+    } else {
+      console.log('✅ Video already playing');
+    }
   }, [stream]);
 
   // Handle barcode detection
@@ -225,7 +235,6 @@ function BarcodeScannerFlow() {
                 showTorchToggle
                 showFocusButton
                 showScanGuide
-                onScan={handleBarcodeDetected}
               />
             </div>
           </div>
