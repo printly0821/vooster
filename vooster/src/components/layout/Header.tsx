@@ -1,22 +1,15 @@
 "use client";
 
 import React from "react";
-import { Camera, Search, Clock, HelpCircle, Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
+import { Camera, Search, Clock, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cn } from "@/lib/utils";
 
 type ViewMode = "camera" | "search";
 
 export function Header() {
   const [viewMode, setViewMode] = React.useState<ViewMode>("camera");
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = React.useState(false);
-
-  // useTheme는 마운트 후에만 사용 가능
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -83,21 +76,7 @@ export function Header() {
             </Button>
 
             {/* 다크모드 토글 */}
-            {mounted && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                aria-label={theme === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환"}
-              >
-                {theme === "dark" ? (
-                  <Sun className="h-5 w-5" />
-                ) : (
-                  <Moon className="h-5 w-5" />
-                )}
-              </Button>
-            )}
+            <ThemeToggle />
           </nav>
         </div>
       </div>
