@@ -8,7 +8,11 @@ import { cn } from "@/lib/utils";
 
 type ViewMode = "camera" | "search";
 
-export function Header() {
+interface HeaderProps {
+  onHelpClick?: () => void;
+}
+
+export function Header({ onHelpClick }: HeaderProps = {}) {
   const [viewMode, setViewMode] = React.useState<ViewMode>("camera");
 
   return (
@@ -71,6 +75,7 @@ export function Header() {
               size="icon"
               className="rounded-full"
               aria-label="도움말"
+              onClick={onHelpClick}
             >
               <HelpCircle className="h-5 w-5" />
             </Button>
