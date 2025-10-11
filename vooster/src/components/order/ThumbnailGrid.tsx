@@ -21,6 +21,7 @@
 
 import * as React from 'react';
 import { ThumbnailItem } from './ThumbnailItem';
+import { ImageViewer } from './ImageViewer';
 import { cn } from '@/lib/utils';
 
 export interface ThumbnailImage {
@@ -50,6 +51,19 @@ export function ThumbnailGrid({
   priorityCount = 4,
   className,
 }: ThumbnailGridProps) {
+  const [viewerOpen, setViewerOpen] = React.useState(false);
+  const [viewerIndex, setViewerIndex] = React.useState(0);
+
+  const handleOpenViewer = (index: number) => {
+    setViewerIndex(index);
+    setViewerOpen(true);
+    onOpenViewer?.(index);
+  };
+
+  const handleCloseViewer = () => {
+    setViewerOpen(false);
+  };
+
   if (images.length === 0) {
     return (
       <div className="flex items-center justify-center rounded-lg border border-dashed border-border p-12">
@@ -59,6 +73,8 @@ export function ThumbnailGrid({
       </div>
     );
   }
+
+  const imageUrls = images.map((img) => img.url);
 
   return (
     <div className={cn('w-full', className)}>
@@ -89,12 +105,21 @@ export function ThumbnailGrid({
               src={image.url}
               alt={`${orderName} 썸네일 ${index + 1}`}
               index={index}
-              onOpen={onOpenViewer}
+              onOpen={handleOpenViewer}
               priority={index < priorityCount}
             />
           </li>
         ))}
       </ul>
+
+      {/* 이미지 뷰어 */}
+      <ImageViewer
+        images={imageUrls}
+        initialIndex={viewerIndex}
+        open={viewerOpen}
+        onClose={handleCloseViewer}
+        altPrefix={orderName}
+      />
     </div>
   );
 }

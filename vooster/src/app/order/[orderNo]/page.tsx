@@ -92,10 +92,6 @@ export default function OrderDetailPage({ params }: PageProps) {
               <ThumbnailGrid
                 images={MOCK_ORDER.thumbnails}
                 orderName={MOCK_ORDER.name}
-                onOpenViewer={(index) => {
-                  console.log('이미지 뷰어 열기:', index);
-                  // TODO: 이미지 뷰어 모달 구현
-                }}
                 priorityCount={4}
               />
             </div>
