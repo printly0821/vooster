@@ -1,0 +1,44 @@
+# 이미지 슬라이드 뷰어 확대 스와이프 구현
+
+**Task ID:** T-009
+**Status:** BACKLOG
+**Importance:** MUST
+**Complexity:** 8/10
+**Urgency:** 8/10
+**Dependencies:** T-008
+
+## Description
+
+### 요구사항
+- 썸네일 클릭 시 전체 화면 모달로 이미지 뷰어 오픈 좌우 스와이프 확대 축소 지원
+- Swiper.js 기반 썸네일 네비게이터 인덱스 표시 키보드 터치 모두 지원 접근성 포함
+- 고해상도 이미지에 대한 지연 로딩과 제스처 성능 최적화
+
+### 구현 상세
+- Swiper Core와 모듈 Zoom Navigation Pagination Keyboard A11y Lazy 사용 CSS 포함
+- 뷰어는 접근성 있는 모달 dialog or aria modal true 포커스 트랩 백드롭 스크롤 잠금 이스케이프 닫기 지원
+- 썸네일 그리드와 연동 초기 슬라이드 인덱스 전달 썸네일 네비게이터는 thumbs 모듈 또는 경량 목록 구현
+- 이미지 lazy true와 zoom maxRatio 설정 핀치 줌 모바일 더블탭 줌 지원
+- 키보드 Left Right Space Enter Escape 핸들링 스크린리더에 현재 인덱스 총 개수 알려주기
+
+### 의사코드
+```pseudo
+function ImageViewer({ images, initialIndex, open, onClose }) {
+  if (!open) return null
+  return <Modal onClose={onClose}>
+    <Swiper initialSlide={initialIndex} zoom navigation pagination keyboard a11y lazy>
+      {images.map(src => <SwiperSlide key={src}><div className='swiper-zoom-container'><img data-src={src} className='swiper-lazy' /></div></SwiperSlide>)}
+    </Swiper>
+  </Modal>
+}
+```
+
+### 테스트 전략
+- 단위 테스트 모달 포커스 트랩 키보드 조작 인덱스 표시 검증
+- 통합 테스트 썸네일에서 전달된 인덱스로 정확히 열리는지 확인 확대 축소 제스처 이벤트 시뮬레이션
+- 성능 테스트 확대 시 프레임 드랍 없는지 스크롤 잠금과 메모리 누수 점검
+
+---
+
+**Created:** 2025-10-11T01:49:07.937Z
+**Updated:** 2025-10-11T01:49:07.937Z

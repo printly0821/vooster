@@ -1,0 +1,43 @@
+# 온보딩 튜토리얼 및 도움말 기능
+
+**Task ID:** T-011
+**Status:** BACKLOG
+**Importance:** COULD
+**Complexity:** 5/10
+**Urgency:** 6/10
+**Dependencies:** T-004, T-007
+
+## Description
+
+### 요구사항
+- 최초 방문자에게 3 4장 온보딩 슬라이드 제공 카메라 권한 허용 스캔 조준 방법 오류 복구 최근 내역 사용 팁 안내
+- 도움말 팝업 FAQ 링크 빠른 가이드 제공 다시 보지 않기 옵션 지원
+- 모바일 데스크톱 반응형 접근성 준수 키보드 스크린리더 친화적 설계
+
+### 구현 상세
+- 온보딩은 클라이언트 컴포넌트로 구현 localStorage에 seen 플래그 저장 다음에 자동 생략 초기 구동에서 조건부 렌더링
+- 슬라이드는 경량 구현 또는 Swiper 기본 페이저 사용 텍스트는 현장 용어 중심 간결한 문장과 일러스트 이미지 포함
+- 카메라 권한 단계에서 바로 권한 요청 트리거 버튼 제공 실패 시 해결 가이드 링크 표기
+- 도움말은 헤더 아이콘 클릭 시 모달로 표시 검색 가능한 FAQ 기본 섹션 포함
+
+### 의사코드
+```pseudo
+function Onboarding() {
+  const [seen, setSeen] = useState(localStorage.getItem('onboarding-seen') == '1')
+  if (seen) return null
+  return <Modal>
+    <Slides pages={[Intro, Permission, ScanTips, History]}
+      onFinish={() => { localStorage.setItem('onboarding-seen', '1'); close() }} />
+  </Modal>
+}
+```
+
+### 테스트 전략
+- 단위 테스트 저장 플래그 로직과 재방문 시 미노출 검증
+- 접근성 테스트 모달 포커스 트랩 라벨 대체 텍스트 확인 키보드 네비게이션 가능 여부
+- E2E 첫 방문 노출 이후 재방문 미노출 흐름 및 권한 요청 버튼 동작 확인
+
+---
+
+**Created:** 2025-10-11T01:49:07.937Z
+**Updated:** 2025-10-11T01:49:07.937Z

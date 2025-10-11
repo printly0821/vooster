@@ -1,0 +1,84 @@
+# 주요 페이지 UI-only 목업 개발 (스캔, 주문 상세)
+
+**Task ID:** T-002
+**Status:** DONE
+**Importance:** MUST
+**Complexity:** 8/10
+**Urgency:** 9/10
+**Dependencies:** None
+
+## Description
+
+바코드 주문 조회 웹앱의 핵심 페이지들에 대한 UI-only 목업 컴포넌트를 생성합니다. shadcn/ui 컴포넌트를 적극적으로 활용하고, 데이터는 하드코딩된 목업 데이터를 사용합니다. 기능 로직이나 API 연동은 포함하지 않습니다.
+
+### Product Summary
+- 인쇄 현장에서 바코드를 스캔하여 주문 상세 정보와 썸네일 이미지를 즉시 확인하는 반응형 웹앱입니다.
+
+### Target Users
+- **현장 작업자**: 빠르고 정확한 주문 확인이 필요한 사용자 (모바일 기기 주 사용)
+- **작업 관리자**: 여러 주문을 연속으로 모니터링하는 사용자 (태블릿, PC 사용)
+
+### Design Mood
+- **Functional & Clear**: 산업 현장에 적합한 명확하고 기능적인 디자인
+- **High-Contrast**: 어떤 조도 환경에서도 가독성이 높은 고대비 인터페이스
+- **Task-Oriented**: 사용자의 작업 흐름을 방해하지 않는 직관적인 UI
+
+### Color Palette
+- T-001에서 정의한 Primary, Secondary, Accent, Grayscale 색상을 사용합니다.
+
+### UI Guidelines
+- **Spacing**: 4px 그리드 시스템 (e.g., `p-4`, `gap-2`)
+- **Borders**: `border-secondary`를 기본으로 사용하고, `rounded-lg`로 부드러운 모서리 표현
+- **Shadows**: `shadow-md`를 사용하여 카드 컴포넌트에 깊이감 부여
+
+### User Journey (UI Mockup Scope)
+`스캔 페이지` -> `주문 상세 페이지`
+
+### Common Components
+- `Card`, `CardHeader`, `CardContent`, `CardTitle` (shadcn/ui)
+- `Button` (shadcn/ui)
+- `Badge` (shadcn/ui)
+- `AspectRatio` (shadcn/ui)
+- `lucide-react` 아이콘
+
+### Sitemap (Mockup Scope)
+- `/` : 홈 (카메라 스캔 페이지)
+- `/order/[orderNo]` : 주문 상세 페이지
+
+### Page Implementations
+
+#### 1. Scan Page (`src/app/page.tsx`)
+- **Core Purpose**: 사용자에게 바코드 스캔을 유도하는 메인 화면입니다.
+- **Key Components**:
+  - **카메라 뷰 플레이스홀더**: 실제 카메라 스트림 대신 검은색 배경의 `AspectRatio` 컴포넌트로 영역을 표시합니다. 중앙에는 "카메라 준비 중..." 텍스트를 표시합니다.
+  - **스캔 가이드 오버레이**: 카메라 뷰 위에 사각형의 스캔 영역 가이드라인을 표시합니다. 중앙에는 "바코드를 여기에 맞춰주세요" 라는 안내 문구를 추가합니다.
+  - **액션 버튼**: 하단에 "수동으로 번호 입력" (`variant="outline"`), "최근 내역 보기" (`variant="ghost"`) 버튼을 배치합니다.
+- **Layout Structure**: 전체 화면을 차지하며, 상단에는 `Header`, 중앙에는 카메라 뷰, 하단에는 액션 버튼이 위치하는 구조입니다.
+
+#### 2. Order Detail Page (`src/app/order/[orderNo]/page.tsx`)
+- **Core Purpose**: 스캔된 주문의 상세 정보와 썸네일 이미지를 명확하게 보여줍니다.
+- **Key Components**:
+  - **주문 정보 헤더**: 페이지 상단에 `Card` 컴포넌트를 사용하여 주문 정보를 표시합니다.
+    - `CardHeader`: `CardTitle`에 "주문번호: MOCK-12345", `CardDescription`에 "고객명: (주)모크컴퍼니" 표시. 우측 상단에 `Badge`로 "인쇄중" 상태 표시.
+    - `CardContent`: "수량: 1,000개", "옵션: 양면 컬러, 무광코팅" 등 주요 메타데이터를 리스트 형태로 표시합니다.
+  - **썸네일 그리드**: 주문 정보 카드 아래에 썸네일 이미지들을 표시합니다.
+    - 모바일에서는 3열, 태블릿 이상에서는 5열 그리드 레이아웃을 사용합니다. (`grid-cols-3 md:grid-cols-5`)
+    - 각 그리드 아이템은 `AspectRatio` 컴포넌트를 사용하여 1:1 비율을 유지하고, 내부에 이미지 플레이스홀더(예: `https://via.placeholder.com/150`)를 표시합니다.
+    - 총 10개의 목업 썸네일을 표시합니다.
+  - **하단 고정 액션 바**: 화면 하단에 고정된 바를 만들고, "다음 주문 스캔" (`variant="default"`) 버튼을 배치합니다. 
+- **Layout Structure**: 스크롤 가능한 콘텐츠 영역과 하단 고정 액션 바로 구성됩니다. 상단 `Header`에는 뒤로가기 버튼 아이콘을 포함합니다.
+
+MUST Guidelines:
+- only implement what is written in prompt.
+- tidy first.
+- Implement UI-only mockup only. Use **dummy data** for now.
+- Be sure every routing works.
+-Be sure root route works.
+
+
+  
+
+---
+
+**Created:** 2025-10-09T09:23:55.066Z
+**Updated:** 2025-10-11T01:28:54.134Z

@@ -1,0 +1,52 @@
+# 주문 상세 API 연동 및 데이터 바인딩
+
+**Task ID:** T-006
+**Status:** BACKLOG
+**Importance:** MUST
+**Complexity:** 8/10
+**Urgency:** 9/10
+**Dependencies:** T-005
+
+## Description
+
+### 요구사항
+- 스캔된 주문번호로 GET orders orderNo 호출하여 주문명 수량 옵션 상태 썸네일 URL 등 수신
+- 네트워크 오류 타임아웃 404 없는 주문번호 인증 실패 등 예외 처리와 재시도 제공
+- 데이터는 UI와 상태관리 TanStack Query로 바인딩 로딩 에러 성공 상태 일관 노출
+- 응답 스키마 검증과 부분 누락 시 안전한 폴백 처리
+- 평균 스캔부터 화면 표시까지 3초 이내 목표 충족
+
+### 구현 상세
+- TanStack Query v5 사용 쿼리키 orders orderNo 로 구성 staleTime와 gcTime 조절 재시도 백오프 0 1 2 초로 제한
+- fetch 기반 클라이언트 구현 AbortController로 5초 타임아웃 적용 인증 헤더 포함 토큰은 환경변수 주입 안전 저장
+- zod로 응답 스키마 정의 파싱 실패 시 사용자 친화 오류와 로깅 남김
+- 404 422 등 상태 코드별 메시지 분기 재스캔 유도 버튼 제공
+- 성공 시 기존 최근 내역 기능 T-003에 레코드 추가 훅 호출 가능하도록 콜백 설계
+- 접근성 로딩 시 스켈레톤과 aria busy 적용 오류 메시지 aria live polite
+
+### 의사코드
+```pseudo
+const OrderSchema = z.object({ id: z.string(), name: z.string(), qty: z.number(), options: z.array(z.string()).optional(), status: z.string(), thumbnails: z.array(z.string()).default([]) })
+
+async function fetchOrder(no, signal) {
+  const res = await fetch(baseUrl + '/orders/' + no, { method: 'GET', headers: authHeaders(), signal })
+  if (!res.ok) throw httpError(res)
+  const json = await res.json()
+  return OrderSchema.parse(json)
+}
+
+function useOrder(no) {
+  return useQuery({ queryKey: ['orders', no], queryFn: ({ signal }) => fetchOrder(no, signal), retry: 2, staleTime: 30000 })
+}
+```
+
+### 테스트 전략
+- 계약 테스트 MSW로 정상 200 비정상 404 401 500 타임아웃 케이스 처리 및 메시지 검증
+- 스키마 검증 테스트 필드 누락 타입 불일치 시 안전 폴백 확인
+- 성능 테스트 스캔 시점부터 데이터 바인딩 완료까지 타임라인 측정 3초 목표 검증
+- E2E Playwright 스캔 성공 후 주문 상세 표시와 재시도 버튼 흐름 검증
+
+---
+
+**Created:** 2025-10-11T01:49:07.937Z
+**Updated:** 2025-10-11T01:49:07.937Z

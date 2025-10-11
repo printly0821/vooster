@@ -1,0 +1,116 @@
+{
+  "totalCount": 11,
+  "downloadedAt": "2025-10-11T05:44:18.997Z",
+  "tasks": [
+    {
+      "taskId": "T-003",
+      "summary": "로컬 스토리지를 이용한 최근 스캔 내역 기능 구현",
+      "status": "DONE",
+      "importance": "MUST",
+      "complexity": 8,
+      "urgency": 8,
+      "createdAt": "2025-10-09T09:23:55.066Z",
+      "updatedAt": "2025-10-11T01:28:59.533Z"
+    },
+    {
+      "taskId": "T-001",
+      "summary": "글로벌 스타일, 테마 및 레이아웃 컴포넌트 설정",
+      "status": "DONE",
+      "importance": "MUST",
+      "complexity": 8,
+      "urgency": 10,
+      "createdAt": "2025-10-09T09:23:55.066Z",
+      "updatedAt": "2025-10-09T09:47:11.772Z"
+    },
+    {
+      "taskId": "T-002",
+      "summary": "주요 페이지 UI-only 목업 개발 (스캔, 주문 상세)",
+      "status": "DONE",
+      "importance": "MUST",
+      "complexity": 8,
+      "urgency": 9,
+      "createdAt": "2025-10-09T09:23:55.066Z",
+      "updatedAt": "2025-10-11T01:28:54.134Z"
+    },
+    {
+      "taskId": "T-008",
+      "summary": "썸네일 그리드 컴포넌트 개발 레이지 로딩 포함",
+      "status": "BACKLOG",
+      "importance": "MUST",
+      "complexity": 7,
+      "urgency": 8,
+      "createdAt": "2025-10-11T01:49:07.937Z",
+      "updatedAt": "2025-10-11T01:49:07.937Z"
+    },
+    {
+      "taskId": "T-009",
+      "summary": "이미지 슬라이드 뷰어 확대 스와이프 구현",
+      "status": "BACKLOG",
+      "importance": "MUST",
+      "complexity": 8,
+      "urgency": 8,
+      "createdAt": "2025-10-11T01:49:07.937Z",
+      "updatedAt": "2025-10-11T01:49:07.937Z"
+    },
+    {
+      "taskId": "T-010",
+      "summary": "다크 모드 지원 자동 수동 토글",
+      "status": "BACKLOG",
+      "importance": "SHOULD",
+      "complexity": 6,
+      "urgency": 7,
+      "createdAt": "2025-10-11T01:49:07.937Z",
+      "updatedAt": "2025-10-11T01:49:07.937Z"
+    },
+    {
+      "taskId": "T-011",
+      "summary": "온보딩 튜토리얼 및 도움말 기능",
+      "status": "BACKLOG",
+      "importance": "COULD",
+      "complexity": 5,
+      "urgency": 6,
+      "createdAt": "2025-10-11T01:49:07.937Z",
+      "updatedAt": "2025-10-11T01:49:07.937Z"
+    },
+    {
+      "taskId": "T-005",
+      "summary": "바코드 스캔 기능 구현",
+      "status": "BACKLOG",
+      "importance": "MUST",
+      "complexity": 8,
+      "urgency": 10,
+      "createdAt": "2025-10-11T01:49:07.937Z",
+      "updatedAt": "2025-10-11T01:49:07.937Z"
+    },
+    {
+      "taskId": "T-004",
+      "summary": "카메라 권한 및 상태 처리 구현",
+      "status": "DONE",
+      "importance": "MUST",
+      "complexity": 7,
+      "urgency": 10,
+      "createdAt": "2025-10-11T01:49:07.937Z",
+      "updatedAt": "2025-10-11T05:07:16.730Z"
+    },
+    {
+      "taskId": "T-006",
+      "summary": "주문 상세 API 연동 및 데이터 바인딩",
+      "status": "BACKLOG",
+      "importance": "MUST",
+      "complexity": 8,
+      "urgency": 9,
+      "createdAt": "2025-10-11T01:49:07.937Z",
+      "updatedAt": "2025-10-11T01:49:07.937Z"
+    },
+    {
+      "taskId": "T-007",
+      "summary": "주요 작업 피드백 및 상태 표시 구축",
+      "status": "BACKLOG",
+      "importance": "MUST",
+      "complexity": 7,
+      "urgency": 9,
+      "createdAt": "2025-10-11T01:49:07.937Z",
+      "updatedAt": "2025-10-11T01:49:07.937Z"
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+# 글로벌 스타일, 테마 및 레이아웃 컴포넌트 설정
+
+**Task ID:** T-001
+**Status:** DONE
+**Importance:** MUST
+**Complexity:** 8/10
+**Urgency:** 10/10
+**Dependencies:** None
+
+## Description
+
+Next.js 15, TypeScript, TailwindCSS 프로젝트의 기본 스타일링과 테마를 설정합니다. 제공된 디자인 시스템에 따라 글로벌 CSS, 색상 팔레트, 타이포그래피, 다크 모드 및 기본 레이아웃 컴포넌트를 구현해주세요.
+
+### 요구사항:
+
+1.  **Color Palette (색상 팔레트)**
+    *   `tailwind.config.ts` 파일에 아래 색상을 확장(extend)하여 추가해주세요.
+    *   CSS 변수를 사용하여 색상을 정의하고, Tailwind 설정에서 이 변수들을 참조하도록 구성해주세요. (`globals.css`)
+    *   라이트 모드와 다크 모드 모두에 대한 색상을 정의해야 합니다.
+
+    ```css
+    /* ./src/app/globals.css */
+    :root {
+      --background: 0 0% 100%;
+      --foreground: 222.2 84% 4.9%;
+      /* ... shadcn 기본 색상들 ... */
+      --primary: 262.1 83.3% 57.8%;
+      --primary-foreground: 210 40% 98%;
+      --secondary: 210 40% 96.1%;
+      --secondary-foreground: 215.4 16.3% 46.9%;
+      --accent: 210 40% 98%;
+      --accent-foreground: 222.2 47.4% 11.2%;
+      /* 추가 색상 */
+      --success: 142.1 76.2% 36.3%;
+      --warning: 47.9 95.8% 53.1%;
+      --destructive: 0 84.2% 60.2%;
+    }
+
+    .dark {
+      --background: 222.2 84% 4.9%;
+      --foreground: 210 40% 98%;
+      /* ... shadcn 기본 다크모드 색상들 ... */
+      --primary: 263.4 70% 50.4%;
+      --primary-foreground: 210 40% 98%;
+      --secondary: 217.2 32.6% 17.5%;
+      --secondary-foreground: 210 40% 98%;
+      --accent: 217.2 32.6% 17.5%;
+      --accent-foreground: 210 40% 98%;
+      /* 추가 색상 */
+      --success: 142.1 76.2% 36.3%;
+      --warning: 47.9 95.8% 53.1%;
+      --destructive: 0 62.8% 30.6%;
+    }
+    ```
+
+2.  **Typography & Font (타이포그래피 및 폰트)**
+    *   `next/font`를 사용하여 'Noto Sans KR' 폰트를 로드하고, 기본 본문 폰트로 설정해주세요. (weights: 400, 500, 700)
+    *   `tailwind.config.ts`의 `fontSize`를 확장하여 아래와 같이 타이포그래피 스케일을 정의해주세요.
+
+    ```javascript
+    // tailwind.config.ts 예시
+    fontSize: {
+      'xs': ['0.75rem', { lineHeight: '1rem' }],
+      'sm': ['0.875rem', { lineHeight: '1.25rem' }],
+      'base': ['1rem', { lineHeight: '1.5rem' }],
+      'lg': ['1.125rem', { lineHeight: '1.75rem' }],
+      'xl': ['1.25rem', { lineHeight: '1.75rem' }],
+      '2xl': ['1.5rem', { lineHeight: '2rem' }],
+      '3xl': ['1.875rem', { lineHeight: '2.25rem' }],
+      '4xl': ['2.25rem', { lineHeight: '2.5rem' }],
+    }
+    ```
+
+3.  **Global Styles & Dark Mode (글로벌 스타일 및 다크 모드)**
+    *   `globals.css`에 `@tailwind` 지시어를 설정하고, `<body>` 태그에 기본 배경색과 글자색을 적용해주세요.
+    *   `src/components/theme-provider.tsx` 컴포넌트를 `next-themes` 라이브러리를 사용하여 생성해주세요. 이 프로바이더는 `app/layout.tsx`에서 최상위 레벨을 감싸야 합니다.
+
+4.  **Layout Component (레이아웃 컴포넌트)**
+    *   `src/components/layout/` 디렉토리에 재사용 가능한 레이아웃 컴포넌트들을 생성해주세요.
+    *   `Header.tsx`: 상단에 고정될 헤더 컴포넌트입니다. 로고 영역(좌측), 네비게이션 아이콘 영역(우측)을 포함한 기본 구조를 만듭니다. (내부 기능은 아직 구현하지 않아도 됩니다.)
+    *   `MainLayout.tsx`: `Header`를 포함하고, `children` prop을 받아 메인 콘텐츠를 렌더링하는 기본 레이아웃 컴포넌트를 생성합니다. 이 컴포넌트는 `app/(protected)/layout.tsx`에서 사용될 것입니다.
+
+MUST Guidelines:
+- only implement what is written in prompt.
+- tidy first.
+
+
+
+  
+
+---
+
+**Created:** 2025-10-09T09:23:55.066Z
+**Updated:** 2025-10-09T09:47:11.772Z
