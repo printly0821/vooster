@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { ThumbnailGrid, type ThumbnailImage } from "@/components/order";
 
 type PageProps = {
   params: Promise<{ orderNo: string }>;
@@ -23,13 +23,14 @@ type PageProps = {
 const MOCK_ORDER = {
   orderNo: "MOCK-12345",
   customerName: "(주)모크컴퍼니",
+  name: "명함 인쇄",
   status: "인쇄중",
   quantity: "1,000개",
   options: ["양면 컬러", "무광코팅"],
   thumbnails: Array.from({ length: 10 }, (_, i) => ({
     id: i + 1,
     url: `https://picsum.photos/seed/${i + 1}/300/300`,
-  })),
+  })) as ThumbnailImage[],
 };
 
 export default function OrderDetailPage({ params }: PageProps) {
@@ -87,28 +88,16 @@ export default function OrderDetailPage({ params }: PageProps) {
                 </CardContent>
               </Card>
 
-              {/* 썸네일 그리드 */}
-              <div>
-                <h2 className="mb-4 text-lg font-semibold">
-                  주문 이미지 ({MOCK_ORDER.thumbnails.length}장)
-                </h2>
-                <div className="grid grid-cols-3 gap-3 md:grid-cols-5">
-                  {MOCK_ORDER.thumbnails.map((thumbnail) => (
-                    <div
-                      key={thumbnail.id}
-                      className="overflow-hidden rounded-lg border border-border bg-muted transition-all hover:border-primary hover:shadow-md"
-                    >
-                      <AspectRatio ratio={1}>
-                        <img
-                          src={thumbnail.url}
-                          alt={`썸네일 ${thumbnail.id}`}
-                          className="h-full w-full object-cover"
-                        />
-                      </AspectRatio>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              {/* 썸네일 그리드 - 레이지 로딩 적용 */}
+              <ThumbnailGrid
+                images={MOCK_ORDER.thumbnails}
+                orderName={MOCK_ORDER.name}
+                onOpenViewer={(index) => {
+                  console.log('이미지 뷰어 열기:', index);
+                  // TODO: 이미지 뷰어 모달 구현
+                }}
+                priorityCount={4}
+              />
             </div>
           </div>
         </div>
