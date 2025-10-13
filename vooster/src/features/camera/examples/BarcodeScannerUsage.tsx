@@ -109,21 +109,44 @@ function BarcodeScannerFlow() {
     const video = videoRef.current;
     video.srcObject = stream;
 
-    // Auto-play video (only if not already playing)
-    if (video.paused) {
-      video.play()
-        .then(() => {
-          console.log('✅ Video playing successfully');
-        })
-        .catch((err) => {
-          // Ignore AbortError (happens when video is being reloaded)
-          if (err.name !== 'AbortError') {
-            console.error('❌ Failed to play video:', err);
+    // Auto-play video with retry logic (최대 3회 재시도)
+    const playWithRetry = async (maxRetries = 3) => {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          if (video.paused) {
+            await video.play();
+            console.log(`✅ Video playing successfully (attempt ${attempt}/${maxRetries})`);
+            return;
+          } else {
+            console.log('✅ Video already playing');
+            return;
           }
-        });
-    } else {
-      console.log('✅ Video already playing');
-    }
+        } catch (err) {
+          // Ignore AbortError (happens when video is being reloaded)
+          if (err instanceof Error && err.name === 'AbortError') {
+            console.log('⚠️ Video play aborted (normal during reload)');
+            return;
+          }
+
+          console.error(`❌ Failed to play video (attempt ${attempt}/${maxRetries}):`, err);
+
+          if (attempt < maxRetries) {
+            const waitTime = attempt * 200;
+            console.log(`🔄 Retrying video play in ${waitTime}ms...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+          } else {
+            console.error('❌ Video play failed after all retries');
+            // 최종 실패 시 에러 던지기
+            throw err;
+          }
+        }
+      }
+    };
+
+    playWithRetry().catch(err => {
+      console.error('❌ Critical: Video play failed completely:', err);
+      // TODO: 사용자에게 명확한 에러 메시지 표시
+    });
   }, [stream]);
 
   // Handle barcode detection

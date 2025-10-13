@@ -84,7 +84,8 @@ export function useCameraStream(selectedDevice: CameraDevice | null) {
       if (isIOS() && isSafari() && streamRef.current) {
         console.log('🍎 iOS Safari 감지: 기존 스트림 정리 후 대기');
         stopStream();
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 500));  // 300 → 500ms (검은 화면 문제 대응)
+        console.log('✅ iOS Safari: 대기 완료 (500ms)');
       } else {
         // Stop existing stream first
         console.log('🛑 기존 스트림 정리');

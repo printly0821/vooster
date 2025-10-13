@@ -253,7 +253,8 @@ export function useBarcodeScanner(
           return (
             video.readyState >= video.HAVE_CURRENT_DATA &&
             video.videoWidth > 0 &&
-            video.videoHeight > 0
+            video.videoHeight > 0 &&
+            !video.paused  // 추가: 재생 중인지 확인
           );
         };
 
@@ -279,15 +280,20 @@ export function useBarcodeScanner(
         // Set up timeout
         timeoutId = setTimeout(() => {
           cleanup();
-          console.error('❌ 비디오 준비 타임아웃:', {
+          console.error('❌ 비디오 준비 타임아웃 (15초):', {
             width: video.videoWidth,
             height: video.videoHeight,
             readyState: video.readyState,
+            readyStateText: ['HAVE_NOTHING', 'HAVE_METADATA', 'HAVE_CURRENT_DATA', 'HAVE_FUTURE_DATA', 'HAVE_ENOUGH_DATA'][video.readyState],
             paused: video.paused,
             srcObject: !!video.srcObject,
+            networkState: video.networkState,
+            networkStateText: ['NETWORK_EMPTY', 'NETWORK_IDLE', 'NETWORK_LOADING', 'NETWORK_NO_SOURCE'][video.networkState],
+            error: video.error ? { code: video.error.code, message: video.error.message } : null,
+            currentTime: video.currentTime,
           });
-          reject(new Error('Video element failed to become ready within 10 seconds'));
-        }, 10000);
+          reject(new Error('Video element failed to become ready within 15 seconds'));
+        }, 15000);  // 10000 → 15000ms (15초로 증가)
 
         // Wait for video to be ready
         const checkReady = () => {
@@ -415,7 +421,37 @@ export function useBarcodeScanner(
         return; // Not an error, just cancelled
       }
 
-      console.error('❌ 바코드 스캔 시작 실패:', err);
+      // 에러 유형 분류
+      let errorType = 'UNKNOWN';
+      let userMessage = '바코드 스캔을 시작할 수 없습니다.';
+      let suggestions: string[] = [];
+
+      if (err instanceof Error) {
+        if (err.message.includes('Video element failed to become ready')) {
+          errorType = 'VIDEO_TIMEOUT';
+          userMessage = '카메라 준비 시간이 초과되었습니다.';
+          suggestions = [
+            '앱을 다시 시작해주세요.',
+            '카메라 권한을 확인해주세요.',
+            '다른 앱에서 카메라를 사용 중인지 확인해주세요.',
+          ];
+        } else if (err.message.includes('stream')) {
+          errorType = 'STREAM_ERROR';
+          userMessage = '카메라 스트림 연결에 실패했습니다.';
+          suggestions = [
+            '카메라 권한을 다시 허용해주세요.',
+            '디바이스를 재시작해보세요.',
+          ];
+        }
+      }
+
+      console.error('❌ 바코드 스캔 시작 실패:', {
+        errorType,
+        errorMessage: err instanceof Error ? err.message : String(err),
+        userMessage,
+        suggestions,
+        stack: err instanceof Error ? err.stack : undefined,
+      });
 
       if (isMountedRef.current) {
         setError(err as Error);
