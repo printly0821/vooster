@@ -2,8 +2,8 @@ import { z } from 'zod';
 import type { AppConfig } from '@/backend/hono/context';
 
 const envSchema = z.object({
-  SUPABASE_URL: z.string().url(),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
 });
 
 let cachedConfig: AppConfig | null = null;
@@ -22,14 +22,20 @@ export const getAppConfig = (): AppConfig => {
     const messages = parsed.error.issues
       .map((issue) => `${issue.path.join('.') || 'config'}: ${issue.message}`)
       .join('; ');
-    throw new Error(`Invalid backend configuration: ${messages}`);
+    console.warn(`Backend configuration validation warning: ${messages}`);
+    console.warn('Supabase를 사용하지 않습니다.');
   }
 
+  const data = parsed.data;
+
   cachedConfig = {
-    supabase: {
-      url: parsed.data.SUPABASE_URL,
-      serviceRoleKey: parsed.data.SUPABASE_SERVICE_ROLE_KEY,
-    },
+    supabase:
+      data.SUPABASE_URL && data.SUPABASE_SERVICE_ROLE_KEY
+        ? {
+            url: data.SUPABASE_URL,
+            serviceRoleKey: data.SUPABASE_SERVICE_ROLE_KEY,
+          }
+        : undefined,
   } satisfies AppConfig;
 
   return cachedConfig;

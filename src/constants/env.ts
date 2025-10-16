@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 const clientEnvSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional(),
 });
 
 const _clientEnv = clientEnvSchema.safeParse({
@@ -13,8 +13,8 @@ const _clientEnv = clientEnvSchema.safeParse({
 export type ClientEnv = z.infer<typeof clientEnvSchema>;
 
 if (!_clientEnv.success) {
-  console.error('환경 변수 검증 실패:', _clientEnv.error.flatten().fieldErrors);
-  throw new Error('환경 변수를 확인하세요.');
+  console.warn('클라이언트 환경 변수 검증 실패:', _clientEnv.error.flatten().fieldErrors);
+  console.warn('Supabase를 사용하지 않습니다.');
 }
 
-export const env: ClientEnv = _clientEnv.data;
+export const env: ClientEnv = _clientEnv.success ? _clientEnv.data : {};

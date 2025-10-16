@@ -35,6 +35,18 @@ export const registerExampleRoutes = (app: Hono<AppEnv>) => {
     const supabase = getSupabase(c);
     const logger = getLogger(c);
 
+    if (!supabase) {
+      logger.warn('[Example API] Supabase가 설정되지 않았습니다.');
+      return respond(
+        c,
+        failure(
+          503,
+          'SUPABASE_NOT_CONFIGURED',
+          'Supabase is not configured. Please contact the administrator.',
+        ),
+      );
+    }
+
     const result = await getExampleById(supabase, parsedParams.data.id);
 
     if (!result.ok) {

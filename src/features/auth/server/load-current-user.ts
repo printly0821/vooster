@@ -13,6 +13,14 @@ const mapUser = (user: User) => ({
 
 export const loadCurrentUser = async (): Promise<CurrentUserSnapshot> => {
   const supabase = await createSupabaseServerClient();
+
+  if (!supabase) {
+    console.warn(
+      "[Auth] Supabase가 설정되지 않아 현재 사용자를 로드할 수 없습니다."
+    );
+    return { status: "unauthenticated", user: null };
+  }
+
   const result = await supabase.auth.getUser();
   const user = result.data.user;
 

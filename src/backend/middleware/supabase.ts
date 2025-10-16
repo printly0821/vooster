@@ -15,6 +15,15 @@ export const withSupabase = () =>
       throw new Error('Application configuration is not available.');
     }
 
+    if (!config.supabase) {
+      console.warn(
+        '[Supabase] 백엔드: Supabase 설정이 없습니다. Supabase 기능을 사용할 수 없습니다.'
+      );
+      c.set(contextKeys.supabase, undefined);
+      await next();
+      return;
+    }
+
     const client = createServiceClient(config.supabase);
 
     c.set(contextKeys.supabase, client);

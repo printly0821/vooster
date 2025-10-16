@@ -17,14 +17,25 @@ type WritableCookieStore = Awaited<ReturnType<typeof cookies>> & {
   }) => void;
 };
 
+export const isSupabaseConfigured = (): boolean => {
+  return !!(env.NEXT_PUBLIC_SUPABASE_URL && env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+};
+
 export const createSupabaseServerClient = async (): Promise<
-  SupabaseClient<Database>
+  SupabaseClient<Database> | null
 > => {
+  if (!isSupabaseConfigured()) {
+    console.warn(
+      "[Supabase] 서버: Supabase 환경 변수가 설정되지 않았습니다. Supabase 기능을 사용할 수 없습니다."
+    );
+    return null;
+  }
+
   const cookieStore = (await cookies()) as WritableCookieStore;
 
   return createServerClient<Database>(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    env.NEXT_PUBLIC_SUPABASE_URL!,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {

@@ -4,7 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
+import {
+  getSupabaseBrowserClient,
+  isSupabaseConfigured,
+} from "@/lib/supabase/browser-client";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
 import { MainLayout } from "@/components/layout";
 
@@ -64,7 +67,23 @@ export default function SignupPage({ params }: SignupPageProps) {
         return;
       }
 
+      if (!isSupabaseConfigured()) {
+        setErrorMessage(
+          "Supabase가 설정되지 않았습니다. 관리자에게 문의하세요."
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
       const supabase = getSupabaseBrowserClient();
+
+      if (!supabase) {
+        setErrorMessage(
+          "Supabase 클라이언트를 초기화할 수 없습니다. 나중에 다시 시도해주세요."
+        );
+        setIsSubmitting(false);
+        return;
+      }
 
       try {
         const result = await supabase.auth.signUp({
