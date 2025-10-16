@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Copy, CheckCircle2, Boxes, Database, LogOut, Server } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
+import { MainLayout } from "@/components/layout";
 
 type SetupCommand = {
   id: string;
@@ -90,25 +91,25 @@ export default function Home() {
   const authActions = useMemo(() => {
     if (isLoading) {
       return (
-        <span className="text-sm text-slate-300">세션 확인 중...</span>
+        <span className="text-sm text-muted-foreground">세션 확인 중...</span>
       );
     }
 
     if (isAuthenticated && user) {
       return (
-        <div className="flex items-center gap-3 text-sm text-slate-200">
+        <div className="flex items-center gap-3 text-sm text-foreground">
           <span className="truncate">{user.email ?? "알 수 없는 사용자"}</span>
           <div className="flex items-center gap-2">
             <Link
               href="/dashboard"
-              className="rounded-md border border-slate-600 px-3 py-1 transition hover:border-slate-400 hover:bg-slate-800"
+              className="rounded-md border border-border px-3 py-1 transition hover:bg-muted"
             >
               대시보드
             </Link>
             <button
               type="button"
               onClick={handleSignOut}
-              className="flex items-center gap-1 rounded-md bg-slate-100 px-3 py-1 text-slate-900 transition hover:bg-white"
+              className="flex items-center gap-1 rounded-md bg-primary px-3 py-1 text-primary-foreground transition hover:opacity-90"
             >
               <LogOut className="h-4 w-4" />
               로그아웃
@@ -122,13 +123,13 @@ export default function Home() {
       <div className="flex items-center gap-3 text-sm">
         <Link
           href="/login"
-          className="rounded-md border border-slate-600 px-3 py-1 text-slate-200 transition hover:border-slate-400 hover:bg-slate-800"
+          className="rounded-md border border-border px-3 py-1 text-foreground transition hover:bg-muted"
         >
           로그인
         </Link>
         <Link
           href="/signup"
-          className="rounded-md bg-slate-100 px-3 py-1 text-slate-900 transition hover:bg-white"
+          className="rounded-md bg-primary px-3 py-1 text-primary-foreground transition hover:opacity-90"
         >
           회원가입
         </Link>
@@ -143,31 +144,32 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white">
+    <MainLayout>
+      <main className="flex-1 bg-background text-foreground">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-16">
-        <div className="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-900/80 px-6 py-4">
-          <div className="text-sm font-medium text-slate-300">
+        <div className="flex items-center justify-between rounded-xl border border-border bg-card px-6 py-4">
+          <div className="text-sm font-medium text-muted-foreground">
             SuperNext — 구조적인 Next.js + Supabase 템플릿
           </div>
           {authActions}
         </div>
         <header className="space-y-4">
-          <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
+          <h1 className="text-4xl font-semibold tracking-tight md:text-5xl text-foreground">
             바코드 주문 조회 앱
           </h1>
-          <p className="max-w-3xl text-base text-slate-300 md:text-lg">
+          <p className="max-w-3xl text-base text-muted-foreground md:text-lg">
             카메라로 바코드를 스캔하여 주문 정보를 빠르게 확인하는 웹 애플리케이션
           </p>
           <div className="flex gap-4 pt-4">
             <Link
               href="/camera-test"
-              className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700"
+              className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition hover:opacity-90"
             >
               📸 카메라 테스트
             </Link>
             <Link
               href="/order/MOCK-12345"
-              className="rounded-lg border border-slate-600 px-6 py-3 font-medium text-slate-200 transition hover:border-slate-400 hover:bg-slate-800"
+              className="rounded-lg border border-border px-6 py-3 font-medium text-foreground transition hover:bg-muted"
             >
               📦 주문 상세 예시
             </Link>
@@ -184,11 +186,11 @@ export default function Home() {
           <BackendOverview />
         </section>
 
-        <footer className="rounded-xl border border-slate-700 bg-slate-900/60 p-6">
-          <h2 className="text-lg font-semibold text-slate-100">
+        <footer className="rounded-xl border border-border bg-card p-6">
+          <h2 className="text-lg font-semibold text-foreground">
             Supabase Migration
           </h2>
-          <p className="mt-2 text-sm text-slate-300">
+          <p className="mt-2 text-sm text-muted-foreground">
             `supabase/migrations/20250227000100_create_example_table.sql` 파일을
             Supabase 대시보드 SQL Editor에 업로드하여 `public.example` 테이블과
             샘플 데이터를 생성하세요. 서비스 역할 키는 서버 환경 변수에만
@@ -196,7 +198,8 @@ export default function Home() {
           </p>
         </footer>
       </div>
-    </main>
+      </main>
+    </MainLayout>
   );
 }
 
@@ -208,24 +211,24 @@ function SetupChecklist({
   onCopy: (command: string) => void;
 }) {
   return (
-    <div className="space-y-4 rounded-xl border border-slate-700 bg-slate-900/60 p-6">
-      <h2 className="text-lg font-semibold text-slate-100">
+    <div className="space-y-4 rounded-xl border border-border bg-card p-6">
+      <h2 className="text-lg font-semibold text-foreground">
         SuperNext 설치 체크리스트
       </h2>
       <ul className="space-y-3">
         {setupCommands.map((item) => (
           <li key={item.id} className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-3">
-              <CheckCircle2 className="mt-1 h-5 w-5 text-emerald-400" />
+              <CheckCircle2 className="mt-1 h-5 w-5 text-accent" />
               <div>
-                <p className="font-medium text-slate-100">{item.label}</p>
-                <code className="text-sm text-slate-300">{item.command}</code>
+                <p className="font-medium text-foreground">{item.label}</p>
+                <code className="text-sm text-muted-foreground">{item.command}</code>
               </div>
             </div>
             <button
               type="button"
               onClick={() => onCopy(item.command)}
-              className="flex items-center gap-1 rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
+              className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-foreground transition hover:bg-muted"
             >
               <Copy className="h-3.5 w-3.5" />
               {copiedCommand === item.command ? "복사됨" : "복사"}
@@ -233,7 +236,7 @@ function SetupChecklist({
           </li>
         ))}
       </ul>
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-muted-foreground">
         개발 서버는 React Query Provider가 설정된 `src/app/providers.tsx`를
         통과하여 실행됩니다.
       </p>
@@ -243,9 +246,9 @@ function SetupChecklist({
 
 function EnvironmentGuide() {
   return (
-    <div className="space-y-4 rounded-xl border border-slate-700 bg-slate-900/60 p-6">
-      <h2 className="text-lg font-semibold text-slate-100">환경 변수</h2>
-      <p className="text-sm text-slate-300">
+    <div className="space-y-4 rounded-xl border border-border bg-card p-6">
+      <h2 className="text-lg font-semibold text-foreground">환경 변수</h2>
+      <p className="text-sm text-muted-foreground">
         `.env.local` 파일에 아래 값을 추가하고, service-role 키는 서버 빌드
         환경에서만 주입하세요.
       </p>
@@ -253,14 +256,14 @@ function EnvironmentGuide() {
         {envVariables.map((item) => (
           <li
             key={item.key}
-            className="rounded-lg border border-slate-800 bg-slate-950/50 p-3"
+            className="rounded-lg border border-border bg-muted/50 p-3"
           >
-            <p className="font-medium text-slate-100">{item.key}</p>
-            <p className="text-xs text-slate-300">{item.description}</p>
+            <p className="font-medium text-foreground">{item.key}</p>
+            <p className="text-xs text-muted-foreground">{item.description}</p>
           </li>
         ))}
       </ul>
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-muted-foreground">
         환경 스키마는 `src/backend/config/index.ts`에서 zod로 검증되며, 누락 시
         명확한 오류를 발생시킵니다.
       </p>
@@ -270,19 +273,19 @@ function EnvironmentGuide() {
 
 function DirectoryOverview() {
   return (
-    <div className="space-y-4 rounded-xl border border-slate-700 bg-slate-900/60 p-6">
-      <h2 className="text-lg font-semibold text-slate-100">
+    <div className="space-y-4 rounded-xl border border-border bg-card p-6">
+      <h2 className="text-lg font-semibold text-foreground">
         SuperNext 주요 디렉터리
       </h2>
       <ul className="space-y-3">
         {directorySummary.map((item) => (
           <li
             key={item.path}
-            className="rounded-lg border border-slate-800 bg-slate-950/50 p-3"
+            className="rounded-lg border border-border bg-muted/50 p-3"
           >
-            <p className="text-sm font-semibold text-slate-100">{item.path}</p>
-            <p className="text-xs text-slate-300">{item.description}</p>
-            <p className="text-xs text-slate-400">{item.title}</p>
+            <p className="text-sm font-semibold text-foreground">{item.path}</p>
+            <p className="text-xs text-muted-foreground">{item.description}</p>
+            <p className="text-xs text-muted-foreground">{item.title}</p>
           </li>
         ))}
       </ul>
@@ -292,25 +295,25 @@ function DirectoryOverview() {
 
 function BackendOverview() {
   return (
-    <div className="space-y-4 rounded-xl border border-slate-700 bg-slate-900/60 p-6">
-      <h2 className="text-lg font-semibold text-slate-100">
+    <div className="space-y-4 rounded-xl border border-border bg-card p-6">
+      <h2 className="text-lg font-semibold text-foreground">
         SuperNext 백엔드 빌딩 블록
       </h2>
       <ul className="space-y-3">
         {backendBuildingBlocks.map((item, index) => (
           <li
             key={item.title + index}
-            className="flex items-start gap-3 rounded-lg border border-slate-800 bg-slate-950/50 p-3"
+            className="flex items-start gap-3 rounded-lg border border-border bg-muted/50 p-3"
           >
-            <div className="mt-0.5 text-indigo-300">{item.icon}</div>
+            <div className="mt-0.5 text-secondary">{item.icon}</div>
             <div>
-              <p className="font-medium text-slate-100">{item.title}</p>
-              <p className="text-xs text-slate-300">{item.description}</p>
+              <p className="font-medium text-foreground">{item.title}</p>
+              <p className="text-xs text-muted-foreground">{item.description}</p>
             </div>
           </li>
         ))}
       </ul>
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-muted-foreground">
         예시 라우터는 `src/features/example/backend/route.ts`, 서비스 로직은
         `src/features/example/backend/service.ts`, 공통 스키마는
         `src/features/example/backend/schema.ts`에서 관리하며 Supabase

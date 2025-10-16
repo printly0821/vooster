@@ -8,7 +8,7 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
-import { FeedbackProvider, ToastContainer } from "@/features/feedback";
+import { Toaster } from "@/components/ui/toaster";
 
 function makeQueryClient() {
   return new QueryClient({
@@ -53,10 +53,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       disableTransitionOnChange
     >
       <QueryClientProvider client={queryClient}>
-        <FeedbackProvider>
-          {children}
-          <ToastContainer />
-        </FeedbackProvider>
+        {children}
+        <Toaster />
       </QueryClientProvider>
     </ThemeProvider>
   );

@@ -19,6 +19,7 @@
   --font-family-sans: var(--font-sans), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-family-mono: var(--font-mono), ui-monospace, "Cascadia Code", "Source Code Pro", monospace;
 
+  /* 색상 시스템 - shadcn/ui 표준 */
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
@@ -46,15 +47,17 @@
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
 
+  /* 라운드 모서리 - 디자인 가이드 */
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
-  /* 커스텀 그림자 - 디자인 가이드 */
+  /* 그림자 시스템 - 디자인 가이드 */
   --shadow-card: 0 1px 3px rgb(0 0 0 / 0.1), 0 1px 2px rgb(0 0 0 / 0.06);
   --shadow-modal: 0 20px 25px rgb(0 0 0 / 0.15), 0 10px 10px rgb(0 0 0 / 0.04);
   --shadow-button-hover: 0 4px 6px rgb(0 0 0 / 0.1);
 
+  /* 애니메이션 */
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
   --animate-scan: scan 2s ease-in-out infinite;
@@ -108,7 +111,7 @@
 
 @layer base {
   :root {
-    /* 디자인 가이드 색상 팔레트 - Light Mode */
+    /* Light Mode - Design Guide Color Palette */
     --background: 210 25% 97%;           /* #F7F9FB Ghost White */
     --foreground: 0 0% 17%;              /* #2B2B2B Charcoal */
     --card: 0 0% 100%;                   /* #FFFFFF Pure White */
@@ -141,6 +144,7 @@
     --input: 210 15% 87%;                /* #D1D5DB */
     --ring: 145 63% 49%;                 /* Accent color for focus ring */
 
+    /* Radius - Design Guide */
     --radius: 0.5rem;                    /* 8px */
 
     /* Chart colors */
@@ -152,7 +156,7 @@
   }
 
   .dark {
-    /* 디자인 가이드 색상 팔레트 - Dark Mode */
+    /* Dark Mode - Design Guide Color Palette */
     --background: 0 0% 7%;               /* #121212 */
     --foreground: 0 0% 88%;              /* #E1E1E1 Text Primary */
     --card: 0 0% 12%;                    /* #1E1E1E */
