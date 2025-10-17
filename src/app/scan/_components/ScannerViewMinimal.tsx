@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import {
-  CameraProvider,
   CameraErrorBanner,
   CameraPermissionPrompt,
   BarcodeScanner,
@@ -44,16 +43,14 @@ export function ScannerViewMinimal({
   scanStatus,
 }: ScannerViewMinimalProps) {
   return (
-    <CameraProvider options={{ autoRequest: false }}>
-      <ScannerFullscreenMinimal
-        onBarcodeDetected={onBarcodeDetected}
-        onOpenSettings={onOpenSettings}
-        onOpenHistory={onOpenHistory}
-        onOpenInfo={onOpenInfo}
-        settings={settings}
-        scanStatus={scanStatus}
-      />
-    </CameraProvider>
+    <ScannerFullscreenMinimal
+      onBarcodeDetected={onBarcodeDetected}
+      onOpenSettings={onOpenSettings}
+      onOpenHistory={onOpenHistory}
+      onOpenInfo={onOpenInfo}
+      settings={settings}
+      scanStatus={scanStatus}
+    />
   );
 }
 

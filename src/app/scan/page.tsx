@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CameraProvider } from '@/features/camera';
 import { isValidOrderNumber, logBarcodeValidation } from './_utils/validation';
 import { ScannerViewMinimal } from './_components/ScannerViewMinimal';
 import { ReportView } from './_components/ReportView';
@@ -96,64 +97,66 @@ export default function ScanPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
-      <AnimatePresence mode="wait">
-        {viewMode === 'scanner' ? (
-          <motion.div
-            key="scanner"
-            initial={{ opacity: 0, x: -100 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -100 }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="h-screen"
-          >
-            <ScannerViewMinimal
-              onBarcodeDetected={handleBarcodeDetected}
-              onOpenSettings={() => setSettingsOpen(true)}
-              onOpenHistory={() => setHistoryOpen(true)}
-              onOpenInfo={() => setInfoOpen(true)}
-              settings={settings}
-              scanStatus={scanStatus}
-            />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="report"
-            initial={{ opacity: 0, x: 100 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 100 }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="h-screen"
-          >
-            {scannedBarcode && (
-              <ReportView
-                barcode={scannedBarcode}
-                onBackToScanner={handleBackToScanner}
+    <CameraProvider options={{ autoRequest: false }}>
+      <div className="min-h-screen bg-background">
+        <AnimatePresence mode="wait">
+          {viewMode === 'scanner' ? (
+            <motion.div
+              key="scanner"
+              initial={{ opacity: 0, x: -100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -100 }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              className="h-screen"
+            >
+              <ScannerViewMinimal
+                onBarcodeDetected={handleBarcodeDetected}
+                onOpenSettings={() => setSettingsOpen(true)}
+                onOpenHistory={() => setHistoryOpen(true)}
+                onOpenInfo={() => setInfoOpen(true)}
+                settings={settings}
+                scanStatus={scanStatus}
               />
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="report"
+              initial={{ opacity: 0, x: 100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 100 }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              className="h-screen"
+            >
+              {scannedBarcode && (
+                <ReportView
+                  barcode={scannedBarcode}
+                  onBackToScanner={handleBackToScanner}
+                />
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* 설정 드로어 */}
-      <SettingsDrawer
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        settings={settings}
-        onSettingsChange={(newSettings) => {
-          // 변경된 설정 항목 업데이트
-          Object.entries(newSettings).forEach(([key, value]) => {
-            updateSetting(key as keyof typeof settings, value);
-          });
-        }}
-      />
+        {/* 설정 드로어 */}
+        <SettingsDrawer
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          settings={settings}
+          onSettingsChange={(newSettings) => {
+            // 변경된 설정 항목 업데이트
+            Object.entries(newSettings).forEach(([key, value]) => {
+              updateSetting(key as keyof typeof settings, value);
+            });
+          }}
+        />
 
-      {/* 히스토리 드로어 */}
-      <HistoryDrawer
-        open={historyOpen}
-        onClose={() => setHistoryOpen(false)}
-        onSelectBarcode={handleSelectFromHistory}
-      />
-    </div>
+        {/* 히스토리 드로어 */}
+        <HistoryDrawer
+          open={historyOpen}
+          onClose={() => setHistoryOpen(false)}
+          onSelectBarcode={handleSelectFromHistory}
+        />
+      </div>
+    </CameraProvider>
   );
 }
