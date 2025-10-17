@@ -1,0 +1,89 @@
+# EditorConfig: https://editorconfig.org
+# Git Line Ending Management
+# 모든 플랫폼(Windows, macOS, Linux)에서 일관된 Line Ending(LF) 사용
+
+# 기본값: 모든 텍스트 파일은 LF 사용
+* text=auto eol=lf
+
+# 소스 코드 파일 (LF 강제)
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.sass text eol=lf
+*.less text eol=lf
+*.html text eol=lf
+*.htm text eol=lf
+*.xml text eol=lf
+*.md text eol=lf
+*.mdx text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.env text eol=lf
+
+# 쉘 스크립트 (LF 필수 - Unix/Linux/macOS)
+*.sh text eol=lf
+*.bash text eol=lf
+*.zsh text eol=lf
+*.fish text eol=lf
+
+# 설정 파일 (LF 강제)
+.gitignore text eol=lf
+.gitattributes text eol=lf
+.editorconfig text eol=lf
+.eslintrc text eol=lf
+.eslintignore text eol=lf
+.prettierrc text eol=lf
+.prettierignore text eol=lf
+.babelrc text eol=lf
+.browserlistrc text eol=lf
+Makefile text eol=lf
+Dockerfile text eol=lf
+docker-compose.yml text eol=lf
+.dockerignore text eol=lf
+
+# 문서 파일 (LF 강제)
+README.md text eol=lf
+CHANGELOG.md text eol=lf
+LICENSE text eol=lf
+
+# 패키지 관리 파일
+package.json text eol=lf
+package-lock.json text eol=lf
+yarn.lock text eol=lf
+pnpm-lock.yaml text eol=lf
+
+# 바이너리 파일 (변환 금지)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.otf binary
+*.mp3 binary
+*.mp4 binary
+*.avi binary
+*.mov binary
+*.wav binary
+*.pdf binary
+*.zip binary
+*.tar binary
+*.gz binary
+*.rar binary
+*.7z binary
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary

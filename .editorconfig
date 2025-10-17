@@ -1,0 +1,184 @@
+# EditorConfig: https://EditorConfig.org
+# IDE/에디터 설정 통일 (VSCode, IntelliJ, Sublime, Vim 등)
+# 모든 팀원이 동일한 코드 스타일 자동 적용
+
+root = true
+
+# 기본 설정 (모든 파일)
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# TypeScript / JavaScript
+[*.{ts,tsx,js,jsx,mjs,cjs}]
+indent_style = space
+indent_size = 2
+quote_type = single
+max_line_length = 100
+
+# React JSX
+[*.{jsx,tsx}]
+indent_style = space
+indent_size = 2
+
+# JSON
+[*.json]
+indent_style = space
+indent_size = 2
+
+# JSON5
+[*.json5]
+indent_style = space
+indent_size = 2
+
+# Markdown (trailing whitespace 허용)
+[*.md]
+trim_trailing_whitespace = false
+insert_final_newline = true
+
+# Markdown (.mdx)
+[*.mdx]
+trim_trailing_whitespace = false
+indent_size = 2
+
+# YAML
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# TOML
+[*.toml]
+indent_style = space
+indent_size = 2
+
+# Shell Scripts (LF 필수)
+[*.sh]
+end_of_line = lf
+indent_style = space
+indent_size = 2
+quote_type = single
+
+# Bash
+[*.bash]
+end_of_line = lf
+indent_style = space
+indent_size = 2
+
+# Dockerfile
+[Dockerfile]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+# Makefile (Tab 필수)
+[Makefile]
+indent_style = tab
+indent_size = 4
+end_of_line = lf
+
+# Docker Compose
+[docker-compose.{yml,yaml}]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+# CSS / SCSS / SASS
+[*.{css,scss,sass}]
+indent_style = space
+indent_size = 2
+
+# HTML
+[*.{html,htm,vue}]
+indent_style = space
+indent_size = 2
+
+# Config files
+[.editorconfig]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+[.gitignore]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+[.gitattributes]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+[.eslintrc*]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+[.prettierrc*]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+[.babelrc*]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+# Environment files
+[.env*]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+# Package files
+[package.json]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+[package-lock.json]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+[yarn.lock]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+[pnpm-lock.yaml]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+# TypeScript Config
+[tsconfig.json]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+[tsconfig.*.json]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+# Next.js Config
+[next.config.*]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+# Tailwind Config
+[tailwind.config.*]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+# PostCSS Config
+[postcss.config.*]
+indent_style = space
+indent_size = 2
+end_of_line = lf
