@@ -88,7 +88,7 @@ export interface BarcodeScannerProps {
  * - High contrast visual indicators
  * - Keyboard accessible controls
  */
-export function BarcodeScanner({
+function BarcodeScannerComponent({
   stream,
   videoElement,
   config,
@@ -417,6 +417,21 @@ export function BarcodeScanner({
     </div>
   );
 }
+
+// Phase 8 Fix: Wrap with React.memo to prevent unnecessary re-renders
+// Only re-render when stream, videoElement, or config actually changes
+export const BarcodeScanner = React.memo(
+  BarcodeScannerComponent,
+  (prevProps, nextProps) => {
+    // Custom comparison: Only re-render if these props actually changed
+    const streamChanged = prevProps.stream?.id !== nextProps.stream?.id;
+    const videoElementChanged = prevProps.videoElement !== nextProps.videoElement;
+    const configChanged = prevProps.config !== nextProps.config;
+
+    // Return true if props are equal (no re-render needed)
+    return !streamChanged && !videoElementChanged && !configChanged;
+  }
+);
 
 // Display name for React DevTools
 BarcodeScanner.displayName = 'BarcodeScanner';

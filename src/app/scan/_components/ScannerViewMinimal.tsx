@@ -298,6 +298,18 @@ function ScannerFullscreenMinimal({
     onBarcodeDetected(result);
   }, [onBarcodeDetected]);
 
+  // Phase 8 Fix: Memoize barcode scanner callbacks to prevent BarcodeScanner remount
+  const handleBarcodeScanError = React.useCallback((error: any) => {
+    console.error('❌ Barcode scan error:', error);
+  }, []);
+
+  // Phase 8 Fix: Memoize config to prevent BarcodeScanner remount
+  const barcodeScannerConfig = React.useMemo(() => ({
+    cooldownMs: settings.cooldownMs,
+    onDetected: handleBarcodeDetected,
+    onError: handleBarcodeScanError,
+  }), [settings.cooldownMs, handleBarcodeDetected, handleBarcodeScanError]);
+
   // 자동 시작 로직: 권한이 승인되면 자동으로 카메라 시작
   React.useEffect(() => {
     if (!rememberCamera || hasAutoStartedRef.current) return;
@@ -403,11 +415,7 @@ function ScannerFullscreenMinimal({
           <BarcodeScanner
             stream={stream}
             videoElement={videoRef.current}
-            config={{
-              cooldownMs: settings.cooldownMs,
-              onDetected: handleBarcodeDetected,
-              onError: (error) => console.error('❌ Barcode scan error:', error),
-            }}
+            config={barcodeScannerConfig}
             showScanGuide={false}
             showTorchToggle={false}
             showFocusButton={false}
