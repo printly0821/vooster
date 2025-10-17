@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import html2canvas from 'html2canvas';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import {
   JobOrderResultAPIResponse,
   toJobOrderData,
 } from '@/features/orders/api/schemas';
-import { ImageViewer } from '@/features/orders/components/ImageViewer';
+import { ThumbnailGrid, type ThumbnailImage } from '@/components/order';
 import { ChevronUp } from 'lucide-react';
 
 interface JobOrderSectionProps {
@@ -48,10 +48,6 @@ export function JobOrderSection({
 }: JobOrderSectionProps) {
   const printRef = useRef<HTMLDivElement>(null);
   const [isPrinting, setIsPrinting] = useState(false);
-
-  // Image Viewer state
-  const [isViewerOpen, setIsViewerOpen] = useState(false);
-  const [viewerImageIndex, setViewerImageIndex] = useState(0);
 
   // Fetch job order report
   const { data, isLoading, error } = useQuery({
@@ -173,21 +169,11 @@ export function JobOrderSection({
   const jobOrderData = toJobOrderData(data.result);
   const { report, thumbnails, groupedThumbnails } = jobOrderData;
 
-  // 이미지 뷰어용 데이터 변환
-  const viewerImages = thumbnails.map((thumb) => ({
+  // ThumbnailGrid용 데이터 변환
+  const thumbnailImages: ThumbnailImage[] = thumbnails.map((thumb) => ({
+    id: `${thumb.iteM_NM}-${thumb.pagE_NO}`,
     url: thumb.thumbnaiL_URL || '',
-    title: `${thumb.iteM_NM || '이미지'}`,
-    pageNo: thumb.pagE_NO,
   }));
-
-  // 이미지 클릭 핸들러
-  const handleImageClick = (thumbnailUrl: string) => {
-    const index = thumbnails.findIndex((t) => t.thumbnaiL_URL === thumbnailUrl);
-    if (index !== -1) {
-      setViewerImageIndex(index);
-      setIsViewerOpen(true);
-    }
-  };
 
   return (
     <div className="bg-background py-4 md:py-8">
@@ -391,50 +377,14 @@ export function JobOrderSection({
         </Accordion>
       </div>
 
-      {/* 이미지 미리보기 섹션 (항상 표시) */}
+      {/* 이미지 미리보기 섹션 - ThumbnailGrid 사용 (Safe Area + 반응형 마진 + Swiper 줌) */}
       {thumbnails.length > 0 && (
         <div className="max-w-[210mm] mx-auto px-4 md:px-0 mb-4">
-          <div className="bg-card rounded-lg border shadow-sm p-4">
-            <h2 className="text-sm font-semibold mb-3 text-foreground">🖼 이미지 미리보기</h2>
-
-            {Object.entries(groupedThumbnails).map(([itemName, thumbs]) => (
-              <div key={itemName} className="mb-4 last:mb-0">
-                <h3 className="text-xs font-medium mb-2 text-muted-foreground">
-                  {itemName} ({thumbs.length}페이지)
-                </h3>
-
-                <div className="grid grid-cols-4 gap-2">
-                  {thumbs.map((thumb, index) => (
-                    <div
-                      key={thumb.thumbnaiL_URL || index}
-                      className="border border-border rounded overflow-hidden"
-                    >
-                      {thumb.thumbnaiL_URL ? (
-                        <div
-                          className="cursor-pointer hover:opacity-80 transition-opacity"
-                          onClick={() => handleImageClick(thumb.thumbnaiL_URL!)}
-                        >
-                          <img
-                            src={thumb.thumbnaiL_URL}
-                            alt={`${itemName} ${thumb.pagE_NO}페이지`}
-                            className="w-full h-auto"
-                            loading="lazy"
-                          />
-                          <p className="text-xs text-center py-1 bg-muted text-muted-foreground">
-                            P.{thumb.pagE_NO}
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="w-full aspect-square bg-muted flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground">이미지 없음</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+          <ThumbnailGrid
+            images={thumbnailImages}
+            orderName={report.iteM_NM || '주문 이미지'}
+            priorityCount={6}
+          />
         </div>
       )}
 
@@ -632,14 +582,6 @@ export function JobOrderSection({
           </div>
         </div>
       </div>
-
-      {/* Image Viewer */}
-      <ImageViewer
-        images={viewerImages}
-        initialIndex={viewerImageIndex}
-        isOpen={isViewerOpen}
-        onClose={() => setIsViewerOpen(false)}
-      />
     </div>
   );
 }
