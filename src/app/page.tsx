@@ -160,10 +160,16 @@ export default function Home() {
           <p className="max-w-3xl text-base text-muted-foreground md:text-lg">
             카메라로 바코드를 스캔하여 주문 정보를 빠르게 확인하는 웹 애플리케이션
           </p>
-          <div className="flex gap-4 pt-4">
+          <div className="flex flex-wrap gap-3 pt-4">
+            <Link
+              href="/scan"
+              className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition hover:opacity-90 shadow-sm"
+            >
+              🔍 바코드 스캔 + 제작의뢰서
+            </Link>
             <Link
               href="/camera-test"
-              className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition hover:opacity-90"
+              className="rounded-lg border border-border px-6 py-3 font-medium text-foreground transition hover:bg-muted"
             >
               📸 카메라 테스트
             </Link>
