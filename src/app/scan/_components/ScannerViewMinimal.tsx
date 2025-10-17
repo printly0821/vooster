@@ -14,6 +14,7 @@ import {
 import { SafeAreaGuide } from './SafeAreaGuide';
 import { TopBar } from './TopBar';
 import { BottomBar } from './BottomBar';
+import { useLastUsedCamera } from '../_hooks/useLastUsedCamera';
 import { ScannerSettings } from '../_types/settings';
 import { cn } from '@/lib/utils';
 
@@ -74,10 +75,13 @@ function ScannerFullscreenMinimal({
     selectedDevice,
     isStreamActive,
     stream,
+    devices,
   } = useCameraState();
-  const { startStream, stopStream } = useCameraActions();
+  const { startStream, stopStream, selectDevice } = useCameraActions();
+  const { lastCameraId, rememberCamera } = useLastUsedCamera();
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const { setVideoElement } = useCameraVideoRef();
+  const hasAutoStartedRef = React.useRef(false);
 
   // 줌 상태
   const [zoom, setZoom] = React.useState(1.0);
@@ -128,6 +132,43 @@ function ScannerFullscreenMinimal({
     console.log('🔍 Barcode detected:', result);
     onBarcodeDetected(result);
   }, [onBarcodeDetected]);
+
+  // 자동 시작 로직: 권한이 승인되면 자동으로 카메라 시작
+  React.useEffect(() => {
+    if (!rememberCamera || hasAutoStartedRef.current) return;
+    if (permissionState !== 'granted' || devices.length === 0) return;
+    if (isStreamActive || selectedDevice) return;
+
+    const autoStart = async () => {
+      try {
+        // 1. 마지막 사용 카메라가 있으면 그 카메라 선택
+        if (lastCameraId && devices.some(d => d.deviceId === lastCameraId)) {
+          await selectDevice(lastCameraId);
+        } else {
+          // 2. 후면 카메라 또는 첫 번째 카메라 선택
+          const backCamera = devices.find(d =>
+            d.label?.toLowerCase().includes('back') ||
+            d.label?.toLowerCase().includes('rear') ||
+            d.facingMode === 'environment'
+          );
+          if (backCamera) {
+            await selectDevice(backCamera.deviceId);
+          } else if (devices.length > 0) {
+            await selectDevice(devices[0].deviceId);
+          }
+        }
+
+        // 3. 스트림 시작
+        await startStream();
+        hasAutoStartedRef.current = true;
+        console.log('✅ 카메라 자동 시작 완료');
+      } catch (error) {
+        console.error('❌ 카메라 자동 시작 실패:', error);
+      }
+    };
+
+    autoStart();
+  }, [permissionState, devices, rememberCamera, lastCameraId, isStreamActive, selectedDevice, selectDevice, startStream]);
 
   // Cleanup on unmount
   React.useEffect(() => {
