@@ -292,11 +292,19 @@ function ScannerFullscreenMinimal({
     }
   }, [zoom]);
 
-  // Handle barcode detection
+  // Phase 9 Fix: Stabilize onBarcodeDetected with ref pattern to prevent BarcodeScanner remount
+  const onBarcodeDetectedRef = React.useRef(onBarcodeDetected);
+
+  // Keep ref updated with latest callback
+  React.useEffect(() => {
+    onBarcodeDetectedRef.current = onBarcodeDetected;
+  }, [onBarcodeDetected]);
+
+  // Handle barcode detection - now stable (no dependency changes)
   const handleBarcodeDetected = React.useCallback((result: BarcodeResult) => {
     console.log('🔍 Barcode detected:', result);
-    onBarcodeDetected(result);
-  }, [onBarcodeDetected]);
+    onBarcodeDetectedRef.current(result);
+  }, []); // Empty deps - never recreated
 
   // Phase 8 Fix: Memoize barcode scanner callbacks to prevent BarcodeScanner remount
   const handleBarcodeScanError = React.useCallback((error: any) => {

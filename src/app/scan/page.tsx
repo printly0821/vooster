@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import { CameraProvider } from '@/features/camera';
 import { isValidOrderNumber, logBarcodeValidation } from './_utils/validation';
@@ -11,6 +10,7 @@ import { HistoryDrawer } from './_components/HistoryDrawer';
 import { useScannerSettings } from './_hooks/useScannerSettings';
 import { useScanHistory } from './_hooks/useScanHistory';
 import { ViewMode } from './_types/settings';
+import { cn } from '@/lib/utils';
 
 // Dynamic import ReportView for code splitting (lazy load only on demand)
 // Performance: Reduces first load JS by ~20-30KB, speeds up initial scan page load
@@ -124,44 +124,41 @@ export default function ScanPage() {
 
   return (
     <CameraProvider options={{ autoRequest: true }}>
-      <div className="min-h-screen bg-background">
-        <AnimatePresence mode="wait">
-          {viewMode === 'scanner' ? (
-            <motion.div
-              key="scanner"
-              initial={{ opacity: 0, x: -100 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -100 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="h-screen"
-            >
-              <ScannerViewMinimal
-                onBarcodeDetected={handleBarcodeDetected}
-                onOpenSettings={() => setSettingsOpen(true)}
-                onOpenHistory={() => setHistoryOpen(true)}
-                onOpenInfo={() => setInfoOpen(true)}
-                settings={settings}
-                scanStatus={scanStatus}
-              />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="report"
-              initial={{ opacity: 0, x: 100 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 100 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="h-screen"
-            >
-              {scannedBarcode && (
-                <ReportView
-                  barcode={scannedBarcode}
-                  onBackToScanner={handleBackToScanner}
-                />
-              )}
-            </motion.div>
+      <div className="relative min-h-screen bg-background overflow-hidden">
+        {/* Phase 9 Fix: Remove AnimatePresence mode="wait" to prevent ScannerViewMinimal unmount */}
+        {/* Keep ScannerViewMinimal always mounted, just hide it when viewing report */}
+        <div
+          className={cn(
+            "absolute inset-0 transition-transform duration-300 ease-in-out",
+            viewMode === 'scanner' ? 'translate-x-0' : '-translate-x-full'
           )}
-        </AnimatePresence>
+          style={{ willChange: 'transform' }}
+        >
+          <ScannerViewMinimal
+            onBarcodeDetected={handleBarcodeDetected}
+            onOpenSettings={() => setSettingsOpen(true)}
+            onOpenHistory={() => setHistoryOpen(true)}
+            onOpenInfo={() => setInfoOpen(true)}
+            settings={settings}
+            scanStatus={scanStatus}
+          />
+        </div>
+
+        {/* ReportView: Only mount when barcode scanned */}
+        {scannedBarcode && (
+          <div
+            className={cn(
+              "absolute inset-0 transition-transform duration-300 ease-in-out bg-background",
+              viewMode === 'report' ? 'translate-x-0' : 'translate-x-full'
+            )}
+            style={{ willChange: 'transform' }}
+          >
+            <ReportView
+              barcode={scannedBarcode}
+              onBackToScanner={handleBackToScanner}
+            />
+          </div>
+        )}
 
         {/* 설정 드로어 */}
         <SettingsDrawer

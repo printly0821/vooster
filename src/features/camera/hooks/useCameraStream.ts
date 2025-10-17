@@ -59,11 +59,14 @@ export function useCameraStream(selectedDevice: CameraDevice | null) {
 
   /**
    * Start camera stream with constraints
+   *
+   * Phase 9 Fix: Now throws errors instead of returning null
+   * @throws {CameraError} When stream initialization fails
    */
   const startStream = useCallback(
     async (
       constraints?: MediaStreamConstraints
-    ): Promise<MediaStream | null> => {
+    ): Promise<MediaStream> => {
       console.log('🎥 useCameraStream: startStream 시작', {
         hasConstraints: !!constraints,
         selectedDevice: selectedDevice?.label,
@@ -74,6 +77,10 @@ export function useCameraStream(selectedDevice: CameraDevice | null) {
       if (startInProgressRef.current) {
         if (process.env.NODE_ENV === 'development') {
           console.warn('⚠️ Stream start already in progress');
+        }
+        // Phase 9 Fix: Throw if no stream yet, otherwise return current stream
+        if (!streamRef.current) {
+          throw new Error('Stream start already in progress but no stream available yet');
         }
         return streamRef.current;
       }
@@ -200,8 +207,15 @@ export function useCameraStream(selectedDevice: CameraDevice | null) {
               setIsStreamActive(true);
               setError(null);
             } else {
+              // Component unmounted - cleanup and throw
               fallbackStream.getTracks().forEach((track) => track.stop());
-              return null;
+              const unmountError = new CameraStreamError(
+                CameraErrorCode.STREAM_START_FAILED,
+                '컴포넌트가 언마운트되었습니다.',
+                'Component unmounted during fallback stream initialization.',
+                ['페이지를 다시 방문해주세요.']
+              );
+              throw unmountError;
             }
 
             return fallbackStream;
@@ -220,12 +234,15 @@ export function useCameraStream(selectedDevice: CameraDevice | null) {
               setError(fallbackError);
             }
 
-            return null;
+            // Phase 9 Fix: Throw error instead of returning null
+            console.log('🚫 Fallback 실패 - 에러 throw');
+            throw fallbackError;
           }
         }
 
-        console.log('🚫 스트림 시작 실패 - null 반환');
-        return null;
+        // Phase 9 Fix: Throw error instead of returning null
+        console.log('🚫 스트림 시작 실패 - 에러 throw');
+        throw cameraError;
       } finally {
         startInProgressRef.current = false;
         console.log('🏁 startStream 완료');

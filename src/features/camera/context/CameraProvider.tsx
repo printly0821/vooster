@@ -312,21 +312,20 @@ export function CameraProvider({ children, options }: CameraProviderProps) {
 
         console.log('📹 CameraProvider: startStreamHook 결과', {
           hasStream: !!newStream,
-          streamError: streamError?.userMessage,
+          streamId: newStream?.id,
+          tracks: newStream?.getTracks().length,
         });
-
-        if (!newStream) {
-          throw new Error(streamError?.userMessage || '카메라 스트림을 시작할 수 없습니다.');
-        }
 
         console.log('✅ 스트림 시작 성공');
         return newStream;
       } catch (error) {
-        console.error('❌ startStream 에러:', error);
-        // Re-throw with better context if it's a generic error
-        if (error instanceof Error && streamError) {
-          throw new Error(streamError.userMessage || error.message);
-        }
+        // Phase 9 Fix: useCameraStream now throws instead of returning null
+        // Error contains all necessary information already
+        console.error('❌ startStream 에러:', {
+          errorType: error instanceof Error ? error.constructor.name : typeof error,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          isCameraError: error instanceof Error && 'code' in error,
+        });
         throw error;
       }
     },
