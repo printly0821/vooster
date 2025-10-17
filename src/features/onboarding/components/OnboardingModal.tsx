@@ -76,6 +76,10 @@ export function OnboardingModal({
 
   const CurrentSlideComponent = slides[currentStep];
 
+  if (!CurrentSlideComponent) {
+    return null;
+  }
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent

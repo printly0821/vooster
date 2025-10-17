@@ -9,7 +9,7 @@ import {
 export const errorBoundary = () =>
   createMiddleware<AppEnv>(async (c, next) => {
     try {
-      await next();
+      return await next();
     } catch (error) {
       const logger = c.get(contextKeys.logger) as AppLogger | undefined;
       const message = match(error)

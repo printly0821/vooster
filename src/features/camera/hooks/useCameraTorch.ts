@@ -49,7 +49,7 @@ export function useCameraTorch(stream: MediaStream | null) {
   const getVideoTrack = useCallback((): MediaStreamTrack | null => {
     if (!stream) return null;
     const videoTracks = stream.getVideoTracks();
-    return videoTracks.length > 0 ? videoTracks[0] : null;
+    return videoTracks.length > 0 ? (videoTracks[0] ?? null) : null;
   }, [stream]);
 
   /**

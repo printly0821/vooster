@@ -24,6 +24,12 @@ export const getAppConfig = (): AppConfig => {
       .join('; ');
     console.warn(`Backend configuration validation warning: ${messages}`);
     console.warn('Supabase를 사용하지 않습니다.');
+
+    cachedConfig = {
+      supabase: undefined,
+    } satisfies AppConfig;
+
+    return cachedConfig;
   }
 
   const data = parsed.data;

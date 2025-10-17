@@ -278,21 +278,7 @@ export function CameraProvider({ children, options }: CameraProviderProps) {
         });
 
         if (!newStream) {
-          // Check if there's a detailed error from the hook
-          if (streamError) {
-            console.error('❌ 스트림 에러:', streamError);
-            const errorMessage = streamError.userMessage || 'Failed to start camera stream';
-            throw new Error(errorMessage);
-          }
-          console.error('❌ 스트림이 null이지만 에러 정보 없음 (아직 준비 안됨 가능성)');
-          // Wait a bit and check again
-          await new Promise(resolve => setTimeout(resolve, 500));
-          const retryStream = await startStreamHook(constraints);
-          if (!retryStream) {
-            throw new Error('카메라 스트림을 시작할 수 없습니다. 다른 앱에서 카메라를 사용 중이거나 카메라 권한이 제대로 부여되지 않았을 수 있습니다.');
-          }
-          console.log('✅ 재시도 후 스트림 시작 성공');
-          return retryStream;
+          throw new Error(streamError?.userMessage || '카메라 스트림을 시작할 수 없습니다.');
         }
 
         console.log('✅ 스트림 시작 성공');

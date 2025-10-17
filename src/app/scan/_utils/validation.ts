@@ -96,8 +96,8 @@ export function analyzeOrderFormat(barcode: string): {
 
   // 형식: YYMMDD-CompanyCode-Numbers
   const parts = trimmed.split('-');
-  const dateCode = parts[0]; // YYMMDD (6자리)
-  const companyCode = parts[1]; // CompanyCode (가변 길이 알파벳)
+  const dateCode = parts[0]!; // YYMMDD (6자리) - 정규식 검증 통과 후이므로 안전
+  const companyCode = parts[1]!; // CompanyCode (가변 길이 알파벳) - 정규식 검증 통과 후이므로 안전
   const numbers = parts.slice(2).join('-'); // 나머지 모두 (숫자, -, _)
 
   return {

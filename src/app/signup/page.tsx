@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -21,8 +21,7 @@ type SignupPageProps = {
   params: Promise<Record<string, never>>;
 };
 
-export default function SignupPage({ params }: SignupPageProps) {
-  void params;
+function SignupPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, refresh } = useCurrentUser();
@@ -210,5 +209,14 @@ export default function SignupPage({ params }: SignupPageProps) {
         </div>
       </div>
     </MainLayout>
+  );
+}
+
+export default function SignupPage({ params }: SignupPageProps) {
+  void params;
+  return (
+    <Suspense fallback={<MainLayout><div className="flex items-center justify-center min-h-screen"><p>로딩 중...</p></div></MainLayout>}>
+      <SignupPageContent />
+    </Suspense>
   );
 }

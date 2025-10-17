@@ -213,7 +213,7 @@ export function MinimalCameraExample() {
         <CameraDeviceSelector />
 
         {/* Video preview */}
-        <CameraVideoPreview videoRef={videoRef} />
+        <CameraVideoPreview videoRef={videoRef as React.RefObject<HTMLVideoElement>} />
       </div>
     </CameraProvider>
   );

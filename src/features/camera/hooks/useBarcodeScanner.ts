@@ -253,8 +253,8 @@ export function useBarcodeScanner(
           return (
             video.readyState >= video.HAVE_CURRENT_DATA &&
             video.videoWidth > 0 &&
-            video.videoHeight > 0 &&
-            !video.paused  // 추가: 재생 중인지 확인
+            video.videoHeight > 0
+            // Note: paused check removed as srcObject is sufficient indicator of ready state
           );
         };
 
@@ -277,23 +277,22 @@ export function useBarcodeScanner(
           srcObject: !!video.srcObject,
         }, ')');
 
-        // Set up timeout
+        // Set up timeout (reduced from 15s to 5s for faster failure detection)
         timeoutId = setTimeout(() => {
           cleanup();
-          console.error('❌ 비디오 준비 타임아웃 (15초):', {
+          console.error('❌ 비디오 준비 타임아웃 (5초):', {
             width: video.videoWidth,
             height: video.videoHeight,
             readyState: video.readyState,
             readyStateText: ['HAVE_NOTHING', 'HAVE_METADATA', 'HAVE_CURRENT_DATA', 'HAVE_FUTURE_DATA', 'HAVE_ENOUGH_DATA'][video.readyState],
-            paused: video.paused,
             srcObject: !!video.srcObject,
             networkState: video.networkState,
             networkStateText: ['NETWORK_EMPTY', 'NETWORK_IDLE', 'NETWORK_LOADING', 'NETWORK_NO_SOURCE'][video.networkState],
             error: video.error ? { code: video.error.code, message: video.error.message } : null,
             currentTime: video.currentTime,
           });
-          reject(new Error('Video element failed to become ready within 15 seconds'));
-        }, 15000);  // 10000 → 15000ms (15초로 증가)
+          reject(new Error('Video element failed to become ready within 5 seconds'));
+        }, 5000);  // Optimized: 15000ms → 5000ms (3배 단축)
 
         // Wait for video to be ready
         const checkReady = () => {
@@ -381,6 +380,9 @@ export function useBarcodeScanner(
       }
 
       const reader = readerRef.current;
+      if (!reader) {
+        throw new Error('Scanner reader not initialized');
+      }
 
       // Start continuous decode from camera stream with optimized timing
       // Uses requestAnimationFrame internally for ~60fps scanning

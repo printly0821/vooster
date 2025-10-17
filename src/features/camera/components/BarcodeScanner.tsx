@@ -182,8 +182,6 @@ export function BarcodeScanner({
 
   // Auto-start scanning when stream and video are ready
   // Track if scanning has been started to prevent double-start
-  const hasStartedRef = React.useRef(false);
-
   // Event-driven approach: Start scanning when stream and video are available
   React.useEffect(() => {
     // Early return if conditions not met
@@ -195,14 +193,7 @@ export function BarcodeScanner({
       return;
     }
 
-    // Prevent double-start
-    if (hasStartedRef.current) {
-      console.log('🎯 BarcodeScanner: Already started, skipping');
-      return;
-    }
-
     console.log('🎯 BarcodeScanner: Starting scan');
-    hasStartedRef.current = true;
 
     // AbortController for proper cancellation
     const abortController = new AbortController();
@@ -221,18 +212,13 @@ export function BarcodeScanner({
         }
       });
 
-    // Cleanup: ONLY when component unmounts or stream/video changes
+    // Cleanup: abort ongoing operation and stop scanning
     return () => {
-      console.log('🧹 BarcodeScanner: Cleanup (unmount or stream change)');
+      console.log('🧹 BarcodeScanner: Cleanup (unmount or dependency change)');
       abortController.abort();
-
-      if (hasStartedRef.current) {
-        console.log('🛑 BarcodeScanner: Stopping scan');
-        stopScanning();
-        hasStartedRef.current = false;
-      }
+      stopScanning();
     };
-  }, [stream, videoElement]); // Only depend on stream/video, NOT on functions
+  }, [stream, videoElement, startScanning, stopScanning]);
 
   // Don't render anything if stream or videoElement is missing
   if (!stream || !videoElement) {

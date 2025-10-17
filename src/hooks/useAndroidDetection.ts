@@ -42,7 +42,7 @@ function parseUserAgent(): Omit<AndroidInfo, 'hasVisualViewport'> {
 
   // Chrome 버전 추출
   const chromeMatch = ua.match(/Chrome\/(\d+)/);
-  const chromeVersion = chromeMatch ? parseInt(chromeMatch[1]) : 0;
+  const chromeVersion = chromeMatch?.[1] ? parseInt(chromeMatch[1]) : 0;
 
   // Gesture Navigation: Android 10+ (API 29+) 추정
   // Chrome 90 이상에서 기본 지원

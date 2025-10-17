@@ -83,6 +83,10 @@ export default function Home() {
 
   const handleSignOut = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
+      console.warn('Supabase client not available');
+      return;
+    }
     await supabase.auth.signOut();
     await refresh();
     router.replace("/");

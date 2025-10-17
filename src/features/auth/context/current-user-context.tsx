@@ -34,6 +34,16 @@ export const CurrentUserProvider = ({
     setSnapshot((prev) => ({ status: "loading", user: prev.user }));
     const supabase = getSupabaseBrowserClient();
 
+    if (!supabase) {
+      const fallbackSnapshot: CurrentUserSnapshot = {
+        status: "unauthenticated",
+        user: null,
+      };
+      setSnapshot(fallbackSnapshot);
+      queryClient.setQueryData(["currentUser"], fallbackSnapshot);
+      return;
+    }
+
     try {
       const result = await supabase.auth.getUser();
 
@@ -42,7 +52,7 @@ export const CurrentUserProvider = ({
           status: "authenticated" as const,
           user: {
             id: data.user.id,
-            email: data.user.email,
+            email: data.user.email ?? null,
             appMetadata: data.user.app_metadata ?? {},
             userMetadata: data.user.user_metadata ?? {},
           },

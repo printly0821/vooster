@@ -29,16 +29,25 @@ const copyCookies = (from: NextResponse, to: NextResponse) => {
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request });
 
+  // Supabase 환경 변수 확인
+  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn('Supabase credentials not configured, skipping auth middleware');
+    return response;
+  }
+
   const supabase = createServerClient<Database>(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
+        setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
+          cookiesToSet.forEach(({ name, value, options }: { name: string; value: string; options?: any }) => {
             request.cookies.set({ name, value, ...options });
             response.cookies.set({ name, value, ...options });
           });

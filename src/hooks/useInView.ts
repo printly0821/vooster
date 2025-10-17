@@ -28,7 +28,7 @@ interface UseInViewOptions extends IntersectionObserverInit {
 
 interface UseInViewReturn<T extends HTMLElement = HTMLDivElement> {
   /** 관찰할 요소에 연결할 ref */
-  ref: React.RefObject<T>;
+  ref: React.RefObject<T | null>;
   /** 요소가 뷰포트에 보이는지 여부 */
   inView: boolean;
 }

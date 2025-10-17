@@ -125,7 +125,7 @@ export function CameraDeviceSelector({
 
   // Auto-select if only one device - ALWAYS call this hook
   React.useEffect(() => {
-    if (devices.length === 1 && !selectedDevice) {
+    if (devices.length === 1 && !selectedDevice && devices[0]) {
       handleDeviceChange(devices[0].deviceId);
     }
   }, [devices.length, selectedDevice, handleDeviceChange]);

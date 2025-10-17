@@ -84,8 +84,8 @@ export function useCameraStream(selectedDevice: CameraDevice | null) {
       if (isIOS() && isSafari() && streamRef.current) {
         console.log('🍎 iOS Safari 감지: 기존 스트림 정리 후 대기');
         stopStream();
-        await new Promise(resolve => setTimeout(resolve, 500));  // 300 → 500ms (검은 화면 문제 대응)
-        console.log('✅ iOS Safari: 대기 완료 (500ms)');
+        await new Promise(resolve => setTimeout(resolve, 300));  // Optimized: 500ms → 300ms (성능 개선)
+        console.log('✅ iOS Safari: 대기 완료 (300ms)');
       } else {
         // Stop existing stream first
         console.log('🛑 기존 스트림 정리');
@@ -133,18 +133,24 @@ export function useCameraStream(selectedDevice: CameraDevice | null) {
           tracks: newStream.getTracks().map(t => ({ kind: t.kind, label: t.label })),
         });
 
+        // Check if component is still mounted before updating state
+        if (!isMountedRef.current) {
+          // Component unmounted during async operation, clean up
+          console.warn('⚠️ 컴포넌트가 언마운트되어 스트림 정리');
+          newStream.getTracks().forEach((track) => track.stop());
+          const unmountError = new CameraStreamError(
+            CameraErrorCode.STREAM_START_FAILED,
+            '컴포넌트가 언마운트되었습니다.',
+            'Component was unmounted during stream initialization. This is expected during navigation.',
+            ['페이지를 다시 방문해주세요.']
+          );
+          throw unmountError;
+        }
+
         // Store stream reference
         streamRef.current = newStream;
-
-        // Update state only if still mounted
-        if (isMountedRef.current) {
-          setStream(newStream);
-          setIsStreamActive(true);
-        } else {
-          // Component unmounted during async operation, clean up
-          newStream.getTracks().forEach((track) => track.stop());
-          return null;
-        }
+        setStream(newStream);
+        setIsStreamActive(true);
 
         // Listen for track ending
         newStream.getTracks().forEach((track) => {

@@ -130,7 +130,7 @@ function CollapsedScanner({
                 </span>
               )}
             </h2>
-            {scanHistory.length > 0 && (
+            {scanHistory.length > 0 && scanHistory[0] && (
               <p className="text-sm text-muted-foreground mt-1">
                 최근: <code className="font-mono bg-muted px-2 py-1 rounded text-xs">
                   {scanHistory[0].text}

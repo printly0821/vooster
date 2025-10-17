@@ -205,7 +205,10 @@ export function toJobOrderData(result: JobOrderResult) {
 
   // 각 그룹을 페이지 번호순으로 정렬
   Object.keys(groupedThumbnails).forEach(key => {
-    groupedThumbnails[key].sort((a, b) => a.pagE_NO - b.pagE_NO);
+    const group = groupedThumbnails[key];
+    if (group) {
+      group.sort((a, b) => (a.pagE_NO ?? 0) - (b.pagE_NO ?? 0));
+    }
   });
 
   return {

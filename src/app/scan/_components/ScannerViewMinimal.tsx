@@ -150,7 +150,7 @@ function ScannerFullscreenMinimal({
           );
           if (backCamera) {
             await selectDevice(backCamera.deviceId);
-          } else if (devices.length > 0) {
+          } else if (devices.length > 0 && devices[0]) {
             await selectDevice(devices[0].deviceId);
           }
         }
@@ -206,6 +206,7 @@ function ScannerFullscreenMinimal({
         autoPlay
         playsInline
         muted
+        preload="metadata"
         className="absolute inset-0 w-full h-full object-cover"
       />
 

@@ -52,7 +52,7 @@ export interface SafeAreaInsets {
  */
 function parseInsetValue(value: string): number {
   const match = value.match(/^(\d+(?:\.\d+)?)/);
-  return match ? parseFloat(match[1]) : 0;
+  return match?.[1] ? parseFloat(match[1]) : 0;
 }
 
 /**

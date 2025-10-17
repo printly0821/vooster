@@ -210,6 +210,7 @@ export function areDeviceListsEqual(
 
   return a.every((deviceA, index) => {
     const deviceB = b[index];
+    if (!deviceB) return false;
     return (
       deviceA.deviceId === deviceB.deviceId &&
       deviceA.label === deviceB.label &&
@@ -231,5 +232,5 @@ export function getDefaultCamera(devices: CameraDevice[]): CameraDevice | null {
   if (backCamera) return backCamera;
 
   // Fall back to first available camera
-  return devices[0];
+  return devices[0] ?? null;
 }

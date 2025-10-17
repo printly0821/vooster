@@ -63,7 +63,10 @@ export function isIOSVersionSupported(): boolean {
   const version = getIOSVersion();
   if (!version) return true; // Assume supported if can't detect
 
-  const majorVersion = parseInt(version.split('.')[0], 10);
+  const majorVersionStr = version.split('.')[0];
+  if (!majorVersionStr) return true;
+
+  const majorVersion = parseInt(majorVersionStr, 10);
   return majorVersion >= MIN_IOS_VERSION;
 }
 
