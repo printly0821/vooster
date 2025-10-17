@@ -7,18 +7,23 @@
  * - 키보드 네비게이션 (Left/Right/Escape)
  * - 접근성 (스크린리더)
  * - 다크모드
+ * - Safe Area 대응 (노치, 홈 인디케이터)
+ * - 반응형 마진 (모바일/태블릿/데스크톱)
+ * - Aspect Ratio 유지
  */
 
 'use client';
 
 import * as React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Zap, Keyboard, Accessibility, Monitor, Smartphone } from 'lucide-react';
+import { ArrowLeft, Zap, Keyboard, Accessibility, Monitor, Smartphone, AlertCircle, Gauge } from 'lucide-react';
 import { MainLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ThumbnailGrid, type ThumbnailImage } from '@/components/order';
+import { useViewportMargin } from '@/hooks/useViewportMargin';
+import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets';
 
 // 테스트용 이미지 데이터 (Unsplash random images)
 const TEST_IMAGES: ThumbnailImage[] = [
@@ -44,6 +49,94 @@ const TEST_IMAGES: ThumbnailImage[] = [
   { id: 19, url: 'https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=1200&h=800&fit=crop' },
   { id: 20, url: 'https://images.unsplash.com/photo-1682687220063-4742bd7fd538?w=1200&h=800&fit=crop' },
 ];
+
+// 디버그 정보 컴포넌트
+function DebugInfo() {
+  const viewportMargin = useViewportMargin();
+  const safeAreaInsets = useSafeAreaInsets();
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Gauge className="h-4 w-4" />
+          디버그 정보
+        </CardTitle>
+        <CardDescription>
+          현재 뷰포트, 마진, Safe Area 정보
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* 뷰포트 정보 */}
+          <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+            <p className="text-xs font-medium text-muted-foreground">뷰포트 크기</p>
+            <p className="font-mono text-sm font-semibold">
+              {viewportMargin.viewportWidth}×{viewportMargin.viewportHeight}px
+            </p>
+          </div>
+
+          {/* 디바이스 타입 */}
+          <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+            <p className="text-xs font-medium text-muted-foreground">디바이스</p>
+            <p className="font-mono text-sm font-semibold capitalize">
+              {viewportMargin.deviceType}
+            </p>
+          </div>
+
+          {/* 마진 정보 */}
+          <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+            <p className="text-xs font-medium text-muted-foreground">마진</p>
+            <p className="font-mono text-sm font-semibold">
+              {viewportMargin.marginPercentage}% ({viewportMargin.marginPx}px)
+            </p>
+          </div>
+
+          {/* Safe Area Top */}
+          <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+            <p className="text-xs font-medium text-muted-foreground">Safe Area - Top</p>
+            <p className="font-mono text-sm font-semibold">
+              {safeAreaInsets.top}px
+            </p>
+          </div>
+
+          {/* Safe Area Bottom */}
+          <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+            <p className="text-xs font-medium text-muted-foreground">Safe Area - Bottom</p>
+            <p className="font-mono text-sm font-semibold">
+              {safeAreaInsets.bottom}px
+            </p>
+          </div>
+
+          {/* Safe Area 지원 */}
+          <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+            <p className="text-xs font-medium text-muted-foreground">Safe Area 지원</p>
+            <div className="flex items-center gap-2">
+              <div
+                className={`h-2 w-2 rounded-full ${
+                  safeAreaInsets.isSupported ? 'bg-green-500' : 'bg-gray-400'
+                }`}
+              />
+              <p className="text-sm font-semibold">
+                {safeAreaInsets.isSupported ? '지원' : '미지원'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Safe Area 미지원 시 안내 */}
+        {!safeAreaInsets.isSupported && (
+          <div className="mt-4 flex gap-3 rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-900 dark:bg-yellow-900/20">
+            <AlertCircle className="h-5 w-5 flex-shrink-0 text-yellow-600 dark:text-yellow-500" />
+            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+              이 디바이스는 Safe Area를 지원하지 않습니다. iOS Safari의 <code className="rounded bg-yellow-100 px-1.5 py-0.5 font-mono text-xs dark:bg-yellow-900">viewport-fit=cover</code> 메타 태그가 필요합니다.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function ImageViewerTestPage() {
   return (
@@ -148,9 +241,27 @@ export default function ImageViewerTestPage() {
                         <li>✓ 지연 로딩 (Lazy)</li>
                       </ul>
                     </div>
+
+                    {/* Safe Area & 반응형 */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Monitor className="h-4 w-4 text-primary" />
+                        Safe Area & 반응형
+                      </div>
+                      <ul className="space-y-1 text-sm text-muted-foreground">
+                        <li>✓ 노치 영역 침범 방지</li>
+                        <li>✓ 홈 인디케이터 고려</li>
+                        <li>✓ 동적 마진 (4-8%)</li>
+                        <li>✓ Aspect Ratio 유지</li>
+                        <li>✓ 화면 방향 변경 대응</li>
+                      </ul>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
+
+              {/* 디버그 정보 */}
+              <DebugInfo />
 
               {/* 썸네일 그리드 */}
               <ThumbnailGrid
@@ -189,6 +300,30 @@ export default function ImageViewerTestPage() {
                     <div>
                       <dt className="font-medium text-muted-foreground">이미지 형식</dt>
                       <dd className="mt-1 font-mono">가로/세로/정사각형</dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-muted-foreground">마진 시스템</dt>
+                      <dd className="mt-1 font-mono">useViewportMargin 훅</dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-muted-foreground">Safe Area</dt>
+                      <dd className="mt-1 font-mono">useSafeAreaInsets 훅</dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-muted-foreground">Aspect Ratio</dt>
+                      <dd className="mt-1 font-mono">object-contain 유지</dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-muted-foreground">모바일 마진</dt>
+                      <dd className="mt-1 font-mono">뷰포트의 4%</dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-muted-foreground">태블릿 마진</dt>
+                      <dd className="mt-1 font-mono">뷰포트의 6%</dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-muted-foreground">데스크톱 마진</dt>
+                      <dd className="mt-1 font-mono">뷰포트의 8%</dd>
                     </div>
                   </dl>
                 </CardContent>
