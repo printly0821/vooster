@@ -227,12 +227,14 @@ export function useBarcodeScanner(
   /**
    * Wait for video element to be ready for scanning
    *
+   * Phase 7 Fix: Changed from useCallback to regular function
+   * to avoid dependency chain issues that caused infinite remounts
+   *
    * @param video - Video element to check
    * @returns Promise that resolves when video is ready
    */
-  const waitForVideoReady = useCallback(
-    (video: HTMLVideoElement): Promise<void> => {
-      return new Promise((resolve, reject) => {
+  const waitForVideoReady = (video: HTMLVideoElement): Promise<void> => {
+    return new Promise((resolve, reject) => {
         // If already validated once, skip re-validation
         if (videoReadyRef.current) {
           console.log('✅ 비디오 이미 검증됨 (캐시 사용)');
@@ -370,9 +372,7 @@ export function useBarcodeScanner(
         // Check periodically (every 100ms)
         intervalId = setInterval(checkReady, 100);
       });
-    },
-    []
-  );
+  };
 
   /**
    * Start barcode scanning
@@ -550,7 +550,8 @@ export function useBarcodeScanner(
       // Invoke error callback if provided
       config?.onError?.(err as any);
     }
-  }, [stream, videoElement, isScanning, handleDetected, config, waitForVideoReady]);
+  }, [stream, videoElement, isScanning, handleDetected, config]);
+  // Phase 7: waitForVideoReady removed (now a regular function, not useCallback)
 
   /**
    * Stop barcode scanning

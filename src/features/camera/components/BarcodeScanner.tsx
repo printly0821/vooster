@@ -180,6 +180,16 @@ export function BarcodeScanner({
     }
   }, [triggerFocus, focusCapability]);
 
+  // Phase 7 Fix: Stabilize function refs to prevent unnecessary remounts
+  const startScanningRef = React.useRef(startScanning);
+  const stopScanningRef = React.useRef(stopScanning);
+
+  // Keep refs updated with latest functions
+  React.useEffect(() => {
+    startScanningRef.current = startScanning;
+    stopScanningRef.current = stopScanning;
+  }, [startScanning, stopScanning]);
+
   // Auto-start scanning when stream and video are ready
   // Track if scanning has been started to prevent double-start
   // Event-driven approach: Start scanning when stream and video are available
@@ -198,8 +208,8 @@ export function BarcodeScanner({
     // AbortController for proper cancellation
     const abortController = new AbortController();
 
-    // Start scanning asynchronously with abort signal
-    startScanning(abortController.signal)
+    // Start scanning asynchronously with abort signal (using ref)
+    startScanningRef.current(abortController.signal)
       .then(() => {
         if (!abortController.signal.aborted) {
           console.log('✅ BarcodeScanner: Scan started successfully');
@@ -212,13 +222,13 @@ export function BarcodeScanner({
         }
       });
 
-    // Cleanup: abort ongoing operation and stop scanning
+    // Cleanup: abort ongoing operation and stop scanning (using ref)
     return () => {
       console.log('🧹 BarcodeScanner: Cleanup (unmount or dependency change)');
       abortController.abort();
-      stopScanning();
+      stopScanningRef.current();
     };
-  }, [stream, videoElement, startScanning, stopScanning]);
+  }, [stream, videoElement]);  // Phase 7: startScanning, stopScanning 제거
 
   // Don't render anything if stream or videoElement is missing
   if (!stream || !videoElement) {
