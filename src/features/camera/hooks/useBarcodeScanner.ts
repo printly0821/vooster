@@ -221,6 +221,9 @@ export function useBarcodeScanner(
   // Track if video has been successfully validated once
   const videoReadyRef = useRef(false);
 
+  // Track retry attempts for video ready check (reliability improvement)
+  const videoReadyRetryCountRef = useRef(0);
+
   /**
    * Wait for video element to be ready for scanning
    *
@@ -250,15 +253,26 @@ export function useBarcodeScanner(
         };
 
         // Check if video is already ready
-        // Progressive: Use HAVE_METADATA for faster initialization (instead of HAVE_CURRENT_DATA)
-        // HAVE_METADATA (1) = duration and dimensions available
-        // HAVE_CURRENT_DATA (2) = data available for current time
+        // Two-tier check: Fast + Stable
+        // Tier 1 (Fast): HAVE_METADATA - allows quick start
+        // Tier 2 (Stable): HAVE_CURRENT_DATA - ensures data availability
         const isVideoReady = () => {
+          const hasMetadata = video.readyState >= video.HAVE_METADATA &&
+                             video.videoWidth > 0 &&
+                             video.videoHeight > 0;
+
+          const isNetworkStable = video.networkState !== video.NETWORK_LOADING &&
+                                 video.networkState !== video.NETWORK_EMPTY;
+
+          return hasMetadata && isNetworkStable;
+        };
+
+        const isVideoStable = () => {
           return (
-            video.readyState >= video.HAVE_METADATA &&
+            video.readyState >= video.HAVE_CURRENT_DATA &&
             video.videoWidth > 0 &&
-            video.videoHeight > 0
-            // Performance: HAVE_METADATA is sufficient for barcode scanning
+            video.videoHeight > 0 &&
+            video.networkState !== video.NETWORK_LOADING
           );
         };
 
@@ -281,10 +295,15 @@ export function useBarcodeScanner(
           srcObject: !!video.srcObject,
         }, ')');
 
-        // Set up timeout (reduced from 15s to 5s for faster failure detection)
+        // Performance fix: Adaptive timeout based on scan session
+        // First scan: 10000ms (need more time for initial setup)
+        // Subsequent scans: 5000ms (video already cached)
+        const adaptiveTimeout = videoReadyRef.current ? 5000 : 10000;
+        console.log(`⏱️ 비디오 준비 타임아웃 설정: ${adaptiveTimeout}ms (${videoReadyRef.current ? '캐시' : '첫'})`);
+
         timeoutId = setTimeout(() => {
           cleanup();
-          console.error('❌ 비디오 준비 타임아웃 (5초):', {
+          console.error(`❌ 비디오 준비 타임아웃 (${adaptiveTimeout}ms):`, {
             width: video.videoWidth,
             height: video.videoHeight,
             readyState: video.readyState,
@@ -295,8 +314,8 @@ export function useBarcodeScanner(
             error: video.error ? { code: video.error.code, message: video.error.message } : null,
             currentTime: video.currentTime,
           });
-          reject(new Error('Video element failed to become ready within 5 seconds'));
-        }, 5000);  // Optimized: 15000ms → 5000ms (3배 단축)
+          reject(new Error(`Video element failed to become ready within ${adaptiveTimeout}ms`));
+        }, adaptiveTimeout);
 
         // Wait for video to be ready
         const checkReady = () => {
@@ -366,6 +385,9 @@ export function useBarcodeScanner(
         readyState: videoElement.readyState,
       });
 
+      // Reset retry count on successful ready
+      videoReadyRetryCountRef.current = 0;
+
       // Use pre-initialized global ZXing reader (Performance: 200-500ms saved)
       if (!readerInitializedRef.current) {
         // Try to use global pre-initialized reader first
@@ -429,6 +451,34 @@ export function useBarcodeScanner(
       if (err instanceof Error && err.message.includes('aborted')) {
         console.log('⏹️ Scan aborted (normal):', err.message);
         return; // Not an error, just cancelled
+      }
+
+      // Reliability fix: Retry on video ready timeout (first attempt only)
+      if (err instanceof Error &&
+          err.message.includes('Video element failed to become ready') &&
+          videoReadyRetryCountRef.current === 0) {
+        videoReadyRetryCountRef.current++;
+        console.log('🔄 비디오 준비 재시도 (1/1)...');
+
+        // Wait briefly before retry
+        await new Promise(r => setTimeout(r, 200));
+
+        // Retry: Reset videoReadyRef and try again
+        videoReadyRef.current = false;
+        console.log('🔄 videoReadyRef 리셋 후 재시도');
+
+        try {
+          await waitForVideoReady(videoElement);
+          console.log('✅ 재시도 성공');
+          videoReadyRetryCountRef.current = 0;
+
+          // Continue with scanning if retry succeeded
+          // (This will recursively call startScanning with same logic)
+          return;
+        } catch (retryErr) {
+          console.error('❌ 재시도 실패:', retryErr);
+          err = retryErr; // Use retry error for final handling
+        }
       }
 
       // 에러 유형 분류
