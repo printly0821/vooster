@@ -1,14 +1,19 @@
 /**
  * 주문번호 형식 검증 유틸리티
  *
- * 주문번호 형식: YYMMDD-XXX-NNNN_NN
- * 예시: 202509-FUJ-0020_00
+ * 주문번호 형식: YYMMDD-CompanyCode-Numbers
+ *
+ * 예시:
+ * - 202509-FUJ-0020_00
+ * - 202510-BIZ-00804_00
+ * - 202510-SW-1234
+ * - 202510-Fuji-0020_00
+ * - 202510-Continue-12345-67
  *
  * 구조:
- * - YYMMDD: 날짜 (2025년 9월 = 250909)
- * - XXX: 3자리 알파벳 (회사/부서 코드)
- * - NNNN: 4자리 숫자 (시퀀스)
- * - NN: 2자리 숫자 (상세 번호)
+ * - YYMMDD: 날짜 (6자리 숫자, 예: 202510 = 2025년 10월)
+ * - CompanyCode: 회사/부서 코드 (가변 길이 알파벳, 대소문자 허용)
+ * - Numbers: 숫자, 하이픈, 언더스코어 조합 (가변 길이)
  */
 
 /**
@@ -19,6 +24,9 @@
  *
  * @example
  * isValidOrderNumber('202509-FUJ-0020_00') // true
+ * isValidOrderNumber('202510-SW-1234') // true
+ * isValidOrderNumber('202510-Fuji-0020_00') // true
+ * isValidOrderNumber('202510-Continue-12345-67') // true
  * isValidOrderNumber('INVALID') // false
  */
 export function isValidOrderNumber(barcode: string): boolean {
@@ -34,11 +42,17 @@ export function isValidOrderNumber(barcode: string): boolean {
  * 주문번호 형식 정규식 패턴 반환
  *
  * @returns RegExp 패턴
+ *
+ * @description
+ * 패턴: YYMMDD-CompanyCode-Numbers
+ * - YYMMDD: 6자리 숫자
+ * - CompanyCode: 1글자 이상의 알파벳 (대소문자)
+ * - Numbers: 숫자, 하이픈(-), 언더스코어(_) 조합
  */
 export function getOrderNumberPattern(): RegExp {
-  // YYMMDD-XXX-NNNN_NN
-  // 예: 202509-FUJ-0020_00
-  return /^\d{6}-[A-Z]{3}-\d{4}_\d{2}$/;
+  // YYMMDD-CompanyCode-Numbers
+  // 예: 202510-SW-1234, 202510-Fuji-0020_00, 202510-Continue-12345-67
+  return /^\d{6}-[A-Za-z]+-[\d\-_]+$/;
 }
 
 /**
@@ -49,15 +63,17 @@ export function getOrderNumberPattern(): RegExp {
  *
  * @example
  * analyzeOrderFormat('202509-FUJ-0020_00')
- * // { isValid: true, parts: { date: '202509', code: 'FUJ', sequence: '0020', detail: '00' } }
+ * // { isValid: true, parts: { date: '202509', code: 'FUJ', numbers: '0020_00' } }
+ *
+ * analyzeOrderFormat('202510-Continue-12345-67')
+ * // { isValid: true, parts: { date: '202510', code: 'Continue', numbers: '12345-67' } }
  */
 export function analyzeOrderFormat(barcode: string): {
   isValid: boolean;
   parts?: {
     date: string;
     code: string;
-    sequence: string;
-    detail: string;
+    numbers: string;
   };
   error?: string;
 } {
@@ -74,25 +90,22 @@ export function analyzeOrderFormat(barcode: string): {
   if (!pattern.test(trimmed)) {
     return {
       isValid: false,
-      error: `Invalid format. Expected: YYMMDD-XXX-NNNN_NN, Got: ${trimmed}`,
+      error: `Invalid format. Expected: YYMMDD-CompanyCode-Numbers, Got: ${trimmed}`,
     };
   }
 
-  // 형식: YYMMDD-XXX-NNNN_NN
+  // 형식: YYMMDD-CompanyCode-Numbers
   const parts = trimmed.split('-');
-  const dateCode = parts[0]; // YYMMDD
-  const codeSeq = parts[1]; // XXX
-  const detailParts = parts[2].split('_'); // NNNN_NN
-  const sequence = detailParts[0]; // NNNN
-  const detail = detailParts[1]; // NN
+  const dateCode = parts[0]; // YYMMDD (6자리)
+  const companyCode = parts[1]; // CompanyCode (가변 길이 알파벳)
+  const numbers = parts.slice(2).join('-'); // 나머지 모두 (숫자, -, _)
 
   return {
     isValid: true,
     parts: {
       date: dateCode,
-      code: codeSeq,
-      sequence,
-      detail,
+      code: companyCode,
+      numbers,
     },
   };
 }
