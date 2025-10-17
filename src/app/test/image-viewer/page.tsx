@@ -24,6 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { ThumbnailGrid, type ThumbnailImage } from '@/components/order';
 import { useViewportMargin } from '@/hooks/useViewportMargin';
 import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets';
+import { useAndroidDetection } from '@/hooks/useAndroidDetection';
 
 // 테스트용 이미지 데이터 (Unsplash random images)
 const TEST_IMAGES: ThumbnailImage[] = [
@@ -54,6 +55,7 @@ const TEST_IMAGES: ThumbnailImage[] = [
 function DebugInfo() {
   const viewportMargin = useViewportMargin();
   const safeAreaInsets = useSafeAreaInsets();
+  const androidInfo = useAndroidDetection();
 
   return (
     <Card>
@@ -122,6 +124,77 @@ function DebugInfo() {
               </p>
             </div>
           </div>
+
+          {/* 계산 방식 */}
+          <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+            <p className="text-xs font-medium text-muted-foreground">계산 방식</p>
+            <p className="text-sm font-semibold capitalize">
+              {safeAreaInsets.calculationMethod === 'css-env' && '✓ CSS env()'}
+              {safeAreaInsets.calculationMethod === 'android-fallback' && '⚠ Android 휴리스틱'}
+              {safeAreaInsets.calculationMethod === 'viewport-api' && '✓ Visual Viewport API'}
+            </p>
+          </div>
+
+          {/* Android 감지 */}
+          {androidInfo.isAndroid && (
+            <>
+              <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+                <p className="text-xs font-medium text-muted-foreground">Android 여부</p>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-blue-500" />
+                  <p className="text-sm font-semibold">Android</p>
+                </div>
+              </div>
+
+              <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+                <p className="text-xs font-medium text-muted-foreground">Chrome 버전</p>
+                <p className="text-sm font-semibold">{androidInfo.chromeVersion}</p>
+              </div>
+
+              <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+                <p className="text-xs font-medium text-muted-foreground">제스처 네비게이션</p>
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`h-2 w-2 rounded-full ${
+                      androidInfo.hasGestureNav ? 'bg-green-500' : 'bg-yellow-500'
+                    }`}
+                  />
+                  <p className="text-sm font-semibold">
+                    {androidInfo.hasGestureNav ? '24dp' : '48dp (3-button)'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+                <p className="text-xs font-medium text-muted-foreground">제조사</p>
+                <p className="text-sm font-semibold capitalize">{androidInfo.manufacturer}</p>
+              </div>
+
+              <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+                <p className="text-xs font-medium text-muted-foreground">WebView</p>
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`h-2 w-2 rounded-full ${
+                      androidInfo.isWebView ? 'bg-orange-500' : 'bg-green-500'
+                    }`}
+                  />
+                  <p className="text-sm font-semibold">{androidInfo.isWebView ? '예' : '아니오 (Chrome)'}</p>
+                </div>
+              </div>
+
+              <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+                <p className="text-xs font-medium text-muted-foreground">Visual Viewport API</p>
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`h-2 w-2 rounded-full ${
+                      androidInfo.hasVisualViewport ? 'bg-green-500' : 'bg-gray-400'
+                    }`}
+                  />
+                  <p className="text-sm font-semibold">{androidInfo.hasVisualViewport ? '지원' : '미지원'}</p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Safe Area 미지원 시 안내 */}
