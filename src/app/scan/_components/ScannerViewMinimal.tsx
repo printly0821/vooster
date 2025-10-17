@@ -113,13 +113,96 @@ function ScannerFullscreenMinimal({
 
     // IIFE to handle async operations in useEffect
     (async () => {
-      video.srcObject = stream;
+      // Phase 6 Fix: Validate stream tracks before assignment
+      const tracks = stream.getTracks();
+      const activeTracks = tracks.filter(t => t.readyState === 'live');
 
-      // Performance fix: Wait for srcObject to initialize
-      // Give browser time to setup media tracks before attempting play
-      console.log('⏳ srcObject 할당 완료, 초기화 대기 (100ms)...');
-      await new Promise(resolve => setTimeout(resolve, 100));
-      console.log('✅ srcObject 초기화 대기 완료');
+      console.log('🎥 Stream 검증:', {
+        streamId: stream.id,
+        totalTracks: tracks.length,
+        activeTracks: activeTracks.length,
+        trackDetails: tracks.map(t => ({
+          kind: t.kind,
+          label: t.label,
+          readyState: t.readyState,
+          enabled: t.enabled,
+          muted: t.muted,
+        })),
+      });
+
+      // Critical check: Stream must have active tracks
+      if (activeTracks.length === 0) {
+        console.error('❌ Stream에 active track이 없음 - 카메라가 이미 정지됨');
+        console.error('📋 전체 track 상태:', tracks.map(t => ({
+          kind: t.kind,
+          readyState: t.readyState,
+          enabled: t.enabled,
+        })));
+        return;
+      }
+
+      if (tracks.length === 0) {
+        console.error('❌ Stream에 track이 전혀 없음 - 유효하지 않은 stream');
+        return;
+      }
+
+      console.log('✅ Stream 검증 통과 - active tracks 있음');
+
+      // Phase 6 Fix: Verify video element is in DOM
+      if (!document.body.contains(video)) {
+        console.error('❌ Video element가 DOM에 없음 - srcObject 할당 불가능');
+        return;
+      }
+      console.log('✅ Video element DOM 검증 통과');
+
+      video.srcObject = stream;
+      console.log('📺 video.srcObject 할당 완료');
+
+      // Phase 6 Fix: Wait for loadedmetadata event explicitly
+      // This ensures video dimensions and duration are available before play
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const metadataTimeout = setTimeout(() => {
+            console.error('❌ loadedmetadata 이벤트 타임아웃 (3초)');
+            reject(new Error('loadedmetadata event timeout after 3 seconds'));
+          }, 3000);
+
+          const handleLoadedMetadata = () => {
+            clearTimeout(metadataTimeout);
+            console.log('✅ loadedmetadata 이벤트 발생:', {
+              videoWidth: video.videoWidth,
+              videoHeight: video.videoHeight,
+              readyState: video.readyState,
+              readyStateName: ['HAVE_NOTHING', 'HAVE_METADATA', 'HAVE_CURRENT_DATA', 'HAVE_FUTURE_DATA', 'HAVE_ENOUGH_DATA'][video.readyState],
+              duration: video.duration,
+            });
+            resolve();
+          };
+
+          // Check if already loaded
+          if (video.readyState >= video.HAVE_METADATA) {
+            console.log('✅ Video metadata 이미 로드됨 (즉시 진행)');
+            clearTimeout(metadataTimeout);
+            resolve();
+            return;
+          }
+
+          video.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+          console.log('⏳ loadedmetadata 이벤트 대기 중...');
+        });
+
+        console.log('✅ Video metadata 준비 완료');
+      } catch (metadataError) {
+        console.error('❌ Video metadata 로드 실패:', metadataError);
+        console.error('📊 최종 video 상태:', {
+          readyState: video.readyState,
+          videoWidth: video.videoWidth,
+          videoHeight: video.videoHeight,
+          srcObject: !!video.srcObject,
+          networkState: video.networkState,
+        });
+        return; // Abort video setup
+      }
 
       const playWithRetry = async (maxRetries = 5) => {
         let lastError: Error | null = null;
