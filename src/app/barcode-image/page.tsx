@@ -23,10 +23,10 @@ export default function BarcodeImagePage() {
         PC 카메라로 스캔해보세요!
       </p>
 
-      {/* QR Code - 주문번호 */}
+      {/* QR Code - 주문번호 #1 */}
       <div style={{ marginBottom: '60px' }}>
         <h2 style={{ fontSize: '18px', marginBottom: '20px', color: 'black' }}>
-          📦 주문번호 QR 코드
+          📦 주문번호 QR 코드 #1
         </h2>
         <div style={{
           backgroundColor: '#f9f9f9',
@@ -38,7 +38,7 @@ export default function BarcodeImagePage() {
         }}>
           <img
             src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=202509-FUJ-0020_00"
-            alt="Order QR Code"
+            alt="Order QR Code #1"
             style={{
               border: '2px solid #333',
               padding: '10px',
@@ -48,6 +48,37 @@ export default function BarcodeImagePage() {
         </div>
         <p style={{ marginTop: '10px', color: '#333', fontSize: '16px', fontWeight: 'bold', textAlign: 'center' }}>
           주문번호: <code style={{ backgroundColor: '#e8e8e8', padding: '4px 8px', borderRadius: '4px' }}>202509-FUJ-0020_00</code>
+        </p>
+        <p style={{ marginTop: '5px', color: '#666', fontSize: '14px', textAlign: 'center' }}>
+          QR 코드 | 스캔하면 /scan 페이지에서 자동 조회됩니다
+        </p>
+      </div>
+
+      {/* QR Code - 주문번호 #2 (신규) */}
+      <div style={{ marginBottom: '60px' }}>
+        <h2 style={{ fontSize: '18px', marginBottom: '20px', color: 'black' }}>
+          📦 주문번호 QR 코드 #2
+        </h2>
+        <div style={{
+          backgroundColor: '#f9f9f9',
+          padding: '20px',
+          borderRadius: '8px',
+          marginBottom: '20px',
+          display: 'flex',
+          justifyContent: 'center',
+        }}>
+          <img
+            src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=202510-BIZ-00804_00"
+            alt="Order QR Code #2"
+            style={{
+              border: '2px solid #333',
+              padding: '10px',
+              backgroundColor: 'white',
+            }}
+          />
+        </div>
+        <p style={{ marginTop: '10px', color: '#333', fontSize: '16px', fontWeight: 'bold', textAlign: 'center' }}>
+          주문번호: <code style={{ backgroundColor: '#e8e8e8', padding: '4px 8px', borderRadius: '4px' }}>202510-BIZ-00804_00</code>
         </p>
         <p style={{ marginTop: '5px', color: '#666', fontSize: '14px', textAlign: 'center' }}>
           QR 코드 | 스캔하면 /scan 페이지에서 자동 조회됩니다
@@ -92,10 +123,10 @@ export default function BarcodeImagePage() {
         </p>
       </div>
 
-      {/* Barcode - 주문번호 */}
+      {/* Barcode - 주문번호 #1 */}
       <div style={{ marginBottom: '60px' }}>
         <h2 style={{ fontSize: '18px', marginBottom: '20px', color: 'black' }}>
-          📦 주문번호 바코드 (Code 128)
+          📦 주문번호 바코드 #1 (Code 128)
         </h2>
         <div style={{
           backgroundColor: '#f9f9f9',
@@ -105,7 +136,7 @@ export default function BarcodeImagePage() {
         }}>
           <img
             src="https://barcode.tec-it.com/barcode.ashx?data=202509-FUJ-0020_00&code=Code128&translate-esc=on"
-            alt="Order Barcode"
+            alt="Order Barcode #1"
             style={{
               border: '2px solid #333',
               padding: '20px',
@@ -117,6 +148,37 @@ export default function BarcodeImagePage() {
         </div>
         <p style={{ marginTop: '10px', color: '#333', fontSize: '16px', fontWeight: 'bold' }}>
           주문번호: <code style={{ backgroundColor: '#e8e8e8', padding: '4px 8px', borderRadius: '4px' }}>202509-FUJ-0020_00</code>
+        </p>
+        <p style={{ marginTop: '5px', color: '#666', fontSize: '14px' }}>
+          형식: Code 128 | 스캔하면 /scan 페이지에서 자동 조회됩니다
+        </p>
+      </div>
+
+      {/* Barcode - 주문번호 #2 (신규) */}
+      <div style={{ marginBottom: '60px' }}>
+        <h2 style={{ fontSize: '18px', marginBottom: '20px', color: 'black' }}>
+          📦 주문번호 바코드 #2 (Code 128)
+        </h2>
+        <div style={{
+          backgroundColor: '#f9f9f9',
+          padding: '20px',
+          borderRadius: '8px',
+          marginBottom: '20px',
+        }}>
+          <img
+            src="https://barcode.tec-it.com/barcode.ashx?data=202510-BIZ-00804_00&code=Code128&translate-esc=on"
+            alt="Order Barcode #2"
+            style={{
+              border: '2px solid #333',
+              padding: '20px',
+              backgroundColor: 'white',
+              width: '100%',
+              maxWidth: '400px',
+            }}
+          />
+        </div>
+        <p style={{ marginTop: '10px', color: '#333', fontSize: '16px', fontWeight: 'bold' }}>
+          주문번호: <code style={{ backgroundColor: '#e8e8e8', padding: '4px 8px', borderRadius: '4px' }}>202510-BIZ-00804_00</code>
         </p>
         <p style={{ marginTop: '5px', color: '#666', fontSize: '14px' }}>
           형식: Code 128 | 스캔하면 /scan 페이지에서 자동 조회됩니다
