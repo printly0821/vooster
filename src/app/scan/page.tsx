@@ -33,7 +33,7 @@ export default function ScanPage() {
   const [infoOpen, setInfoOpen] = useState(false);
 
   // Hooks
-  const { settings } = useScannerSettings();
+  const { settings, updateSetting } = useScannerSettings();
   const { addToHistory } = useScanHistory();
 
   /**
@@ -141,8 +141,10 @@ export default function ScanPage() {
         onClose={() => setSettingsOpen(false)}
         settings={settings}
         onSettingsChange={(newSettings) => {
-          // 설정 변경 로직
-          console.log('Settings changed:', newSettings);
+          // 변경된 설정 항목 업데이트
+          Object.entries(newSettings).forEach(([key, value]) => {
+            updateSetting(key as keyof typeof settings, value);
+          });
         }}
       />
 
