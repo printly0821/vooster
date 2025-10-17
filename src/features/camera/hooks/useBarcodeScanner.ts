@@ -244,12 +244,10 @@ export function useBarcodeScanner(
 
         let intervalId: NodeJS.Timeout | null = null;
         let timeoutId: NodeJS.Timeout | null = null;
-        let monitorIntervalId: NodeJS.Timeout | null = null;
 
         const cleanup = () => {
           if (intervalId) clearInterval(intervalId);
           if (timeoutId) clearTimeout(timeoutId);
-          if (monitorIntervalId) clearInterval(monitorIntervalId);
           video.removeEventListener('loadeddata', checkReady);
           video.removeEventListener('loadedmetadata', checkReady);
           video.removeEventListener('canplay', checkReady);
@@ -257,26 +255,16 @@ export function useBarcodeScanner(
         };
 
         // Check if video is already ready
-        // Two-tier check: Fast + Stable
-        // Tier 1 (Fast): HAVE_METADATA - allows quick start
-        // Tier 2 (Stable): HAVE_CURRENT_DATA - ensures data availability
+        // Phase 10 Fix: Remove networkState check
+        // Root cause: MediaStream uses networkState=NETWORK_LOADING (2) even when ready
+        // readyState and dimensions are sufficient for MediaStream-based video
         const isVideoReady = () => {
-          const hasMetadata = video.readyState >= video.HAVE_METADATA &&
-                             video.videoWidth > 0 &&
-                             video.videoHeight > 0;
-
-          const isNetworkStable = video.networkState !== video.NETWORK_LOADING &&
-                                 video.networkState !== video.NETWORK_EMPTY;
-
-          return hasMetadata && isNetworkStable;
-        };
-
-        const isVideoStable = () => {
           return (
-            video.readyState >= video.HAVE_CURRENT_DATA &&
+            video.readyState >= video.HAVE_METADATA &&
             video.videoWidth > 0 &&
-            video.videoHeight > 0 &&
-            video.networkState !== video.NETWORK_LOADING
+            video.videoHeight > 0
+            // Phase 10: networkState check removed
+            // MediaStream keeps networkState=NETWORK_LOADING during live capture
           );
         };
 
@@ -308,32 +296,10 @@ export function useBarcodeScanner(
         const adaptiveTimeout = videoReadyRef.current ? 5000 : 10000;
         console.log(`⏱️ 비디오 준비 타임아웃 설정: ${adaptiveTimeout}ms (${videoReadyRef.current ? '캐시' : '첫'})`);
 
-        // Reliability fix: Real-time readyState monitoring
-        // Monitor video state every 500ms to diagnose issues
-        let monitorCount = 0;
-        monitorIntervalId = setInterval(() => {
-          monitorCount++;
-          console.log(`📊 [${monitorCount}] Video 상태 모니터링:`, {
-            readyState: video.readyState,
-            readyStateName: ['HAVE_NOTHING', 'HAVE_METADATA', 'HAVE_CURRENT_DATA', 'HAVE_FUTURE_DATA', 'HAVE_ENOUGH_DATA'][video.readyState],
-            videoWidth: video.videoWidth,
-            videoHeight: video.videoHeight,
-            networkState: video.networkState,
-            networkStateName: ['NETWORK_EMPTY', 'NETWORK_IDLE', 'NETWORK_LOADING', 'NETWORK_NO_SOURCE'][video.networkState],
-            paused: video.paused,
-            currentTime: video.currentTime,
-          });
-
-          // Proactive check: If ready, trigger immediately
-          if (isVideoReady()) {
-            console.log('🎯 모니터링 중 준비 감지 → 즉시 실행');
-            if (monitorIntervalId) clearInterval(monitorIntervalId);
-            checkReady();
-          }
-        }, 500);
+        // Phase 10: Simplified monitoring (removed 500ms interval)
+        // Rely on event listeners + 100ms polling (sufficient)
 
         timeoutId = setTimeout(() => {
-          if (monitorIntervalId) clearInterval(monitorIntervalId);
           cleanup();
           console.error(`❌ 비디오 준비 타임아웃 (${adaptiveTimeout}ms):`, {
             width: video.videoWidth,
