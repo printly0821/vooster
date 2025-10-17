@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { isValidOrderNumber, logBarcodeValidation } from './_utils/validation';
 import { ScannerViewMinimal } from './_components/ScannerViewMinimal';
 import { ReportView } from './_components/ReportView';
+import { SettingsDrawer } from './_components/SettingsDrawer';
+import { HistoryDrawer } from './_components/HistoryDrawer';
 import { useScannerSettings } from './_hooks/useScannerSettings';
 import { useScanHistory } from './_hooks/useScanHistory';
 import { ViewMode } from './_types/settings';
@@ -85,6 +87,14 @@ export default function ScanPage() {
     setScanStatus('idle');
   }, []);
 
+  /**
+   * 히스토리에서 바코드 선택
+   */
+  const handleSelectFromHistory = useCallback((barcode: string) => {
+    setScannedBarcode(barcode);
+    setViewMode('report');
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <AnimatePresence mode="wait">
@@ -125,9 +135,23 @@ export default function ScanPage() {
         )}
       </AnimatePresence>
 
-      {/* TODO: 설정 모달 (Phase 4) */}
-      {/* TODO: 히스토리 드로어 (Phase 4) */}
-      {/* TODO: 정보/도움말 모달 (Phase 4) */}
+      {/* 설정 드로어 */}
+      <SettingsDrawer
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        settings={settings}
+        onSettingsChange={(newSettings) => {
+          // 설정 변경 로직
+          console.log('Settings changed:', newSettings);
+        }}
+      />
+
+      {/* 히스토리 드로어 */}
+      <HistoryDrawer
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        onSelectBarcode={handleSelectFromHistory}
+      />
     </div>
   );
 }
