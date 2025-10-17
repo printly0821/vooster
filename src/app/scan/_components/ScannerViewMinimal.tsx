@@ -110,23 +110,80 @@ function ScannerFullscreenMinimal({
     }
 
     const video = videoRef.current;
-    video.srcObject = stream;
 
-    const playWithRetry = async (maxRetries = 3) => {
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          if (video.paused) await video.play();
-          return;
-        } catch (err) {
-          if (err instanceof Error && err.name === 'AbortError') return;
-          if (attempt < maxRetries) {
-            await new Promise(resolve => setTimeout(resolve, attempt * 200));
+    // IIFE to handle async operations in useEffect
+    (async () => {
+      video.srcObject = stream;
+
+      // Performance fix: Wait for srcObject to initialize
+      // Give browser time to setup media tracks before attempting play
+      console.log('⏳ srcObject 할당 완료, 초기화 대기 (100ms)...');
+      await new Promise(resolve => setTimeout(resolve, 100));
+      console.log('✅ srcObject 초기화 대기 완료');
+
+      const playWithRetry = async (maxRetries = 5) => {
+        let lastError: Error | null = null;
+
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            if (video.paused) {
+              console.log(`▶️ Video play 시도 ${attempt}/${maxRetries}`, {
+                readyState: video.readyState,
+                paused: video.paused,
+                srcObject: !!video.srcObject,
+              });
+              await video.play();
+              console.log('✅ Video play 성공');
+              return;
+            }
+            console.log('✅ Video 이미 재생 중');
+            return;
+          } catch (err) {
+            lastError = err as Error;
+            console.warn(`⚠️ Play 시도 ${attempt}/${maxRetries} 실패:`, {
+              name: lastError.name,
+              message: lastError.message,
+              readyState: video.readyState,
+              paused: video.paused,
+            });
+
+            // AbortError는 정상적인 중단
+            if (lastError.name === 'AbortError') {
+              console.log('⏹️ Play 중단 (정상)');
+              return;
+            }
+
+            // NotSupportedError는 재시도 불가능
+            if (lastError.name === 'NotSupportedError') {
+              console.error('❌ 브라우저가 video play를 지원하지 않음');
+              throw lastError;
+            }
+
+            // NotAllowedError, 기타 에러 → 재시도
+            if (attempt < maxRetries) {
+              const delay = Math.min(1000, attempt * 300);
+              console.log(`⏳ ${delay}ms 후 재시도...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+            }
           }
         }
-      }
-    };
 
-    playWithRetry().catch(console.error);
+        // 최종 실패
+        console.error('❌ Video play 최종 실패 (모든 재시도 소진):', {
+          error: lastError?.message,
+          readyState: video.readyState,
+          paused: video.paused,
+          networkState: video.networkState,
+          srcObject: !!video.srcObject,
+        });
+
+        throw lastError || new Error('Video play failed after all retries');
+      };
+
+      playWithRetry().catch(err => {
+        console.error('❌ Video play 처리 실패:', err);
+      });
+    })();
 
     // Performance fix: Cleanup on unmount or stream change
     return () => {
