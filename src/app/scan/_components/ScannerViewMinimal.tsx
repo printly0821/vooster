@@ -97,6 +97,18 @@ function ScannerFullscreenMinimal({
     const currentStream = videoRef.current.srcObject as MediaStream | null;
     if (currentStream && currentStream.id === stream.id) return;
 
+    // Performance fix: Clean up previous stream explicitly
+    if (currentStream) {
+      console.log('🧹 이전 스트림 정리');
+      currentStream.getTracks().forEach(track => {
+        try {
+          track.stop();
+        } catch (err) {
+          console.warn('⚠️ 트랙 정지 중 에러:', err);
+        }
+      });
+    }
+
     const video = videoRef.current;
     video.srcObject = stream;
 
@@ -115,6 +127,22 @@ function ScannerFullscreenMinimal({
     };
 
     playWithRetry().catch(console.error);
+
+    // Performance fix: Cleanup on unmount or stream change
+    return () => {
+      console.log('🧹 Video element cleanup (stream 변경 또는 unmount)');
+      if (video.srcObject) {
+        const oldStream = video.srcObject as MediaStream;
+        oldStream.getTracks().forEach(track => {
+          try {
+            track.stop();
+          } catch (err) {
+            console.warn('⚠️ 정리 중 트랙 정지 에러:', err);
+          }
+        });
+        video.srcObject = null;
+      }
+    };
   }, [stream]);
 
   // 줌 적용

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import { CameraProvider } from '@/features/camera';
@@ -51,6 +51,9 @@ export default function ScanPage() {
   const { settings, updateSetting } = useScannerSettings();
   const { addToHistory } = useScanHistory();
 
+  // Performance fix: Track pending timers for cleanup (prevent memory leaks)
+  const pendingTimersRef = React.useRef<NodeJS.Timeout[]>([]);
+
   /**
    * 바코드 스캔 감지 핸들러 (단순화)
    * - 형식 검증
@@ -64,7 +67,9 @@ export default function ScanPage() {
     if (!isValidOrderNumber(barcode)) {
       logBarcodeValidation(barcode, false);
       setScanStatus('error');
-      setTimeout(() => setScanStatus('idle'), 1000);
+      // Performance fix: Track timer for cleanup
+      const errorTimer = setTimeout(() => setScanStatus('idle'), 1000);
+      pendingTimersRef.current.push(errorTimer);
       return;
     }
 
@@ -87,17 +92,24 @@ export default function ScanPage() {
     }
 
     // 0.3초 후 제작의뢰서 화면으로 전환
-    setTimeout(() => {
+    // Performance fix: Track timer for cleanup
+    const transitionTimer = setTimeout(() => {
       setScannedBarcode(barcode);
       setViewMode('report');
       setScanStatus('idle');
     }, 300);
+    pendingTimersRef.current.push(transitionTimer);
   }, [settings.vibrationEnabled, addToHistory]);
 
   /**
    * 스캔 화면으로 복귀
    */
   const handleBackToScanner = useCallback(() => {
+    // Performance fix: Clean up pending timers
+    pendingTimersRef.current.forEach(timer => clearTimeout(timer));
+    pendingTimersRef.current = [];
+    console.log('🧹 대기 중인 타이머 정리 완료');
+
     setViewMode('scanner');
     setScanStatus('idle');
   }, []);

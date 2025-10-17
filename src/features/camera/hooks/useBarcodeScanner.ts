@@ -487,6 +487,12 @@ export function useBarcodeScanner(
       scanningControlRef.current = null;
     }
 
+    // Performance fix: Reset videoReadyRef cache to prevent stale state
+    // Issue: videoReadyRef persisted across scan cycles causing video ready check to be skipped
+    // Solution: Reset to false so next scan session performs proper video validation
+    videoReadyRef.current = false;
+    console.log('🔄 videoReadyRef 리셋 (다음 스캔 시 정상 동작)');
+
     // Note: BrowserMultiFormatReader doesn't have a reset() method
     // The reader instance is reusable and will be properly cleaned up
     // when the component unmounts or when a new scan session starts

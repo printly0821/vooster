@@ -402,6 +402,19 @@ export function CameraProvider({ children, options }: CameraProviderProps) {
   }, [permissionState, devices.length, options?.autoEnumerate, enumerateDevices]);
 
   /**
+   * Cleanup global ZXing reader on provider unmount (performance optimization)
+   */
+  useEffect(() => {
+    return () => {
+      // Performance fix: Clear global ZXing reader on unmount to allow garbage collection
+      if (globalZXingReader) {
+        console.log('🧹 전역 ZXing 리더 정리 (Provider unmount)');
+        globalZXingReader = null;
+      }
+    };
+  }, []);
+
+  /**
    * Auto-start stream when device selected
    */
   useEffect(() => {
