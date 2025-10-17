@@ -159,15 +159,16 @@ function CollapsedScanner({
           </div>
         </div>
 
-        {/* 최근 스캔 내역 (3개) */}
+        {/* 최근 스캔 내역 (압축형) */}
         {scanHistory.length > 0 && (
-          <div className="border-t px-4 md:px-6 py-3">
-            <div className="flex gap-2 overflow-x-auto pb-2">
+          <div className="border-t px-4 md:px-6 py-2">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+              <span className="text-xs text-muted-foreground flex-shrink-0 py-1.5">최근:</span>
               {scanHistory.slice(0, 3).map((result, index) => (
                 <button
                   key={`${result.timestamp}-${index}`}
                   onClick={() => onSelectFromHistory(result.text)}
-                  className="flex-shrink-0 px-3 py-2 rounded-md bg-muted hover:bg-muted/80 transition-colors text-sm font-mono truncate"
+                  className="flex-shrink-0 px-2.5 py-1 rounded bg-muted hover:bg-muted/80 transition-colors text-xs font-mono"
                   title={result.text}
                 >
                   {result.text}
@@ -408,7 +409,7 @@ function BarcodeScannerFlow({
       {selectedDevice ? (
         <div className="space-y-3">
           {/* Video preview with scanner overlay */}
-          <div className="relative aspect-square max-h-[400px] mx-auto bg-black rounded-lg overflow-hidden">
+          <div className="relative aspect-video max-h-[180px] md:max-h-[220px] lg:max-h-[240px] mx-auto bg-black rounded-lg overflow-hidden">
             <video
               ref={videoRef}
               autoPlay
