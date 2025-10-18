@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser';
 import {
   FileText,
   Code,
@@ -100,6 +101,24 @@ const DOCS_NAV = [
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { isAuthenticated } = useCurrentUser();
+
+  const handleDocClick = (
+    item: { slug: string; public: boolean },
+    e: React.MouseEvent,
+  ) => {
+    // 비공개 문서이고 미인증 상태일 때
+    if (!item.public && !isAuthenticated) {
+      e.preventDefault();
+      router.push(`/login?redirectedFrom=/docs/${item.slug}`);
+      onClose(); // 모바일에서 사이드바 닫기
+      return;
+    }
+
+    // 공개 문서이거나 인증된 경우: 기본 Link 동작
+    onClose();
+  };
 
   return (
     <>
@@ -141,23 +160,32 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     {section.items.map((item) => {
                       const isActive = pathname === `/docs/${item.slug}`;
                       const ItemIcon = item.icon;
+                      const isLocked = !item.public && !isAuthenticated;
 
                       return (
                         <li key={item.slug}>
                           <Link
                             href={`/docs/${item.slug}`}
-                            onClick={onClose}
+                            onClick={(e) => handleDocClick(item, e)}
                             className={cn(
                               'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors',
                               isActive
                                 ? 'bg-gray-100 font-medium text-gray-900 dark:bg-gray-800 dark:text-gray-100'
                                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-900 dark:hover:text-gray-100',
+                              isLocked && 'cursor-pointer', // 클릭 가능 표시
                             )}
                           >
                             <ItemIcon className="h-4 w-4 flex-shrink-0" />
                             <span className="flex-1">{item.title}</span>
                             {!item.public && (
-                              <Lock className="h-3 w-3 text-gray-400" />
+                              <Lock
+                                className={cn(
+                                  'h-3 w-3',
+                                  isLocked
+                                    ? 'text-amber-500'
+                                    : 'text-gray-400',
+                                )}
+                              />
                             )}
                           </Link>
                         </li>

@@ -3,6 +3,7 @@
 import { type ReactNode, useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import SearchDialog from './SearchDialog';
+import { AuthSection } from './AuthSection';
 import { Menu, X, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -55,10 +56,11 @@ export default function DocLayout({ children }: DocLayoutProps) {
             <Search className="h-5 w-5" />
           </Button>
           <ThemeToggle size="sm" />
+          <AuthSection />
         </div>
       </div>
 
-      {/* Desktop Search Button + Theme Toggle */}
+      {/* Desktop Search Button + Theme Toggle + Auth */}
       <div className="fixed right-8 top-8 z-40 hidden lg:flex items-center gap-2">
         <button
           onClick={() => setSearchOpen(true)}
@@ -71,6 +73,7 @@ export default function DocLayout({ children }: DocLayoutProps) {
           </kbd>
         </button>
         <ThemeToggle size="icon" />
+        <AuthSection />
       </div>
 
       {/* Search Dialog */}
