@@ -1,0 +1,14 @@
+{
+  "buildCommand": "next build",
+  "framework": "nextjs",
+  "installCommand": "npm install",
+  "outputDirectory": ".next",
+  "functions": {
+    "app/**/*.js": {
+      "includeFiles": [
+        "docs/**",
+        "vooster-docs/**"
+      ]
+    }
+  }
+}
