@@ -81,6 +81,11 @@ export default function Home() {
   const { user, isAuthenticated, isLoading, refresh } = useCurrentUser();
   const router = useRouter();
 
+  // 인증이 필요한 페이지 링크 생성
+  const getProtectedLink = (path: string) => {
+    return isAuthenticated ? path : `/login?redirectedFrom=${path}`;
+  };
+
   const handleSignOut = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
@@ -158,19 +163,19 @@ export default function Home() {
           </p>
           <div className="flex flex-wrap gap-3 pt-4">
             <Link
-              href="/scan"
+              href={getProtectedLink("/scan")}
               className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition hover:opacity-90 shadow-sm"
             >
               🔍 바코드 스캔 + 제작의뢰서
             </Link>
             <Link
-              href="/camera-test"
+              href={getProtectedLink("/camera-test")}
               className="rounded-lg border border-border px-6 py-3 font-medium text-foreground transition hover:bg-muted"
             >
               📸 카메라 테스트
             </Link>
             <Link
-              href="/order/MOCK-12345"
+              href={getProtectedLink("/order/MOCK-12345")}
               className="rounded-lg border border-border px-6 py-3 font-medium text-foreground transition hover:bg-muted"
             >
               📦 주문 상세 예시
