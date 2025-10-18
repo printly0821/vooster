@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
@@ -51,8 +52,9 @@ function getDocPath(slug: string): string {
 
 /**
  * 문서 컨텐츠 가져오기 (서버 컴포넌트에서 사용)
+ * React Cache로 래핑하여 generateMetadata()와 페이지 렌더링 간 중복 실행 방지
  */
-export async function getDocContent(slug: string): Promise<DocContent> {
+export const getDocContent = cache(async (slug: string): Promise<DocContent> => {
   try {
     const filePath = getDocPath(slug);
     const fileContent = fs.readFileSync(filePath, 'utf-8');
@@ -88,7 +90,7 @@ export async function getDocContent(slug: string): Promise<DocContent> {
     console.error(`Error reading document ${slug}:`, error);
     throw new Error(`Failed to load document: ${slug}`);
   }
-}
+});
 
 /**
  * 모든 문서 목록 가져오기

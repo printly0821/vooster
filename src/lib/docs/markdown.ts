@@ -5,7 +5,24 @@ import remarkRehype from 'remark-rehype';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import rehypeStringify from 'rehype-stringify';
-import rehypePrism from 'rehype-prism-plus';
+
+// refractor 경량화: 필요한 언어만 선택적 로드
+import { refractor } from 'refractor/lib/core.js';
+import typescript from 'refractor/lang/typescript.js';
+import javascript from 'refractor/lang/javascript.js';
+import bash from 'refractor/lang/bash.js';
+import jsx from 'refractor/lang/jsx.js';
+import tsx from 'refractor/lang/tsx.js';
+import json from 'refractor/lang/json.js';
+import rehypePrism from 'rehype-prism-plus/generator';
+
+// 언어 등록 (모듈 로드 시 1회만 실행)
+refractor.register(typescript);
+refractor.register(javascript);
+refractor.register(bash);
+refractor.register(jsx);
+refractor.register(tsx);
+refractor.register(json);
 
 /**
  * Markdown을 HTML로 변환
@@ -22,10 +39,10 @@ export async function markdownToHtml(markdown: string): Promise<string> {
         className: ['anchor-link'],
       },
     }) // 헤딩에 링크 추가
-    .use(rehypePrism, {
+    .use(rehypePrism(refractor), {
       ignoreMissing: true,
       showLineNumbers: true,
-    }) // 코드 블록 syntax highlighting
+    }) // 코드 블록 syntax highlighting (경량화된 refractor 사용)
     .use(rehypeStringify, { allowDangerousHtml: true }) // HTML 문자열로 변환
     .process(markdown);
 
