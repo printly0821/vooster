@@ -1,5 +1,14 @@
+---
+title: "Code Guideline for Vooster Project"
+description: "시니어 개발자 가이드라인 - 코딩 스타일 및 Best Practices"
+category: "technical"
+author: "Vooster Team"
+date: "2025-10-18"
+public: false
+order: 2
+---
 
-    # Senior Developer Guidelines
+# Senior Developer Guidelines
     
     ## Must
     

@@ -1,3 +1,13 @@
+---
+title: "Technical Requirements Document (TRD)"
+description: "기술 요구사항 명세서 - 기술 스택 및 아키텍처"
+category: "technical"
+author: "Vooster Team"
+date: "2025-10-18"
+public: false
+order: 1
+---
+
 # Technical Requirements Document (TRD)
   
 ## Tech Stack
