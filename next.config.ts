@@ -25,10 +25,8 @@ const nextConfig: NextConfig = {
     return config;
   },
 
-  // 실험적 기능: 외부 패키지 최적화
-  experimental: {
-    serverComponentsExternalPackages: ['refractor'],
-  },
+  // 외부 패키지 최적화 (Next.js 15.5+ 새 위치)
+  serverExternalPackages: ['refractor'],
 };
 
 export default nextConfig;
