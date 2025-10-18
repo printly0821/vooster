@@ -35,9 +35,26 @@
   @apply leading-7;
 }
 
-/* Links */
+/* Links - 밑줄 제거, 색상 + 굵은 글씨 + 우아한 호버 효과 */
 .markdown-content a {
-  @apply text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline;
+  /* 기본: Accent Color (Emerald) + 굵은 글씨 */
+  @apply text-[#27AE60] dark:text-[#34D399];
+  @apply font-semibold;
+  @apply no-underline;
+
+  /* 부드러운 트랜지션 */
+  @apply transition-all duration-200 ease-in-out;
+
+  /* 호버 효과: 배경 하이라이트 + 색상 변화 + 미세한 상승 */
+  @apply hover:bg-accent/10;
+  @apply hover:px-1.5 hover:-mx-1.5;
+  @apply hover:py-0.5 hover:-my-0.5;
+  @apply hover:rounded;
+  @apply hover:text-[#229954] dark:hover:text-[#4ADE80];
+  @apply hover:-translate-y-px;
+
+  /* 포커스 시 접근성 */
+  @apply focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2;
 }
 
 /* Code Blocks - 다크 테마 (참고 이미지 스타일) */
