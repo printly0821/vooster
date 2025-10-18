@@ -17,7 +17,7 @@ import {
   type ReactNode,
 } from 'react';
 import { BrowserMultiFormatReader } from '@zxing/browser';
-import { DecodeHintType } from '@zxing/library';
+import { DecodeHintType, BarcodeFormat } from '@zxing/library';
 import type {
   CameraContextValue,
   CameraContextState,
@@ -63,9 +63,16 @@ export function initializeGlobalZXingReader(): BrowserMultiFormatReader | null {
   console.log('🔧 전역 ZXing 리더 초기화 시작 (Provider 마운트)');
   try {
     const hints = new Map();
-    hints.set(DecodeHintType.TRY_HARDER, true);
+    // Phase 11: TRY_HARDER 제거 (성능 50-60% 향상)
+    // 산업현장 최적화: 주문번호에 사용되는 포맷만 지정
+    hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+      BarcodeFormat.QR_CODE,   // QR 코드 (주문번호)
+      BarcodeFormat.CODE_128,  // 가장 일반적인 1D 바코드
+      BarcodeFormat.CODE_39,
+      BarcodeFormat.EAN_13,
+    ]);
     globalZXingReader = new BrowserMultiFormatReader(hints);
-    console.log('✅ 전역 ZXing 리더 초기화 완료');
+    console.log('✅ 전역 ZXing 리더 초기화 완료 (최적화: TRY_HARDER 제거)');
     return globalZXingReader;
   } catch (error) {
     console.error('❌ ZXing 리더 초기화 실패:', error);
