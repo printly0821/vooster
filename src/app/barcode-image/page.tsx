@@ -1,5 +1,7 @@
 'use client';
 
+import { MainLayout } from '@/components/layout';
+
 /**
  * 바코드 테스트용 이미지 페이지
  *
@@ -8,12 +10,12 @@
  */
 export default function BarcodeImagePage() {
   return (
-    <div style={{
-      padding: '40px',
-      textAlign: 'center',
-      backgroundColor: 'white',
-      minHeight: '100vh',
-    }}>
+    <MainLayout>
+      <div style={{
+        padding: '40px',
+        textAlign: 'center',
+        minHeight: '100vh',
+      }}>
       <h1 style={{ fontSize: '24px', marginBottom: '20px', color: 'black' }}>
         📱 바코드 테스트 이미지
       </h1>
@@ -246,6 +248,7 @@ export default function BarcodeImagePage() {
           4. 콘솔(F12)에서 인식 결과 확인하기
         </p>
       </div>
-    </div>
+      </div>
+    </MainLayout>
   );
 }

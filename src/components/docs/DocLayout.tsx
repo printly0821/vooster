@@ -5,6 +5,7 @@ import Sidebar from './Sidebar';
 import SearchDialog from './SearchDialog';
 import { Menu, X, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 interface DocLayoutProps {
   children: ReactNode;
@@ -45,17 +46,20 @@ export default function DocLayout({ children }: DocLayoutProps) {
           </Button>
           <span className="font-semibold">프로젝트 문서</span>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setSearchOpen(true)}
-        >
-          <Search className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSearchOpen(true)}
+          >
+            <Search className="h-5 w-5" />
+          </Button>
+          <ThemeToggle size="sm" />
+        </div>
       </div>
 
-      {/* Desktop Search Button */}
-      <div className="fixed right-8 top-8 z-40 hidden lg:block">
+      {/* Desktop Search Button + Theme Toggle */}
+      <div className="fixed right-8 top-8 z-40 hidden lg:flex items-center gap-2">
         <button
           onClick={() => setSearchOpen(true)}
           className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -66,6 +70,7 @@ export default function DocLayout({ children }: DocLayoutProps) {
             ⌘K
           </kbd>
         </button>
+        <ThemeToggle size="icon" />
       </div>
 
       {/* Search Dialog */}

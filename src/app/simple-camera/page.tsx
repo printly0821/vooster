@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { MainLayout } from '@/components/layout';
 
 /**
  * 가장 단순한 카메라 테스트 페이지
@@ -61,10 +62,11 @@ export default function SimpleCameraPage() {
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-      <h1 style={{ fontSize: '24px', marginBottom: '20px' }}>
-        🧪 단순 카메라 테스트
-      </h1>
+    <MainLayout>
+      <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+        <h1 style={{ fontSize: '24px', marginBottom: '20px' }}>
+          🧪 단순 카메라 테스트
+        </h1>
 
       <div style={{ marginBottom: '20px' }}>
         <p>
@@ -141,6 +143,7 @@ export default function SimpleCameraPage() {
         <p>✅ "카메라 시작" 버튼을 누르면 카메라 권한을 요청합니다</p>
         <p>✅ 카메라 영상이 위의 검은 박스에 나와야 합니다</p>
       </div>
-    </div>
+      </div>
+    </MainLayout>
   );
 }
