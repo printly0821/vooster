@@ -2,7 +2,7 @@
 title: "Design Guide"
 description: "디자인 가이드 - UI/UX 디자인 원칙 및 스타일 가이드"
 category: "design"
-author: "Vooster Team"
+author: "신우진"
 date: "2025-10-18"
 public: false
 order: 1

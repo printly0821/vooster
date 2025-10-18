@@ -2,7 +2,7 @@
 title: "바코드 주문 조회 웹앱 PRD"
 description: "제품 요구사항 명세서 - Product Requirements Document"
 category: "project"
-author: "Vooster Team"
+author: "신우진"
 date: "2025-10-18"
 public: false
 order: 1

@@ -2,7 +2,7 @@
 title: "Step by Step Guide"
 description: "단계별 개발 가이드 - 구현 절차 및 프로세스"
 category: "technical"
-author: "Vooster Team"
+author: "신우진"
 date: "2025-10-18"
 public: false
 order: 3

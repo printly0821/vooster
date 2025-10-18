@@ -2,7 +2,7 @@
 title: "Code Guideline for Vooster Project"
 description: "시니어 개발자 가이드라인 - 코딩 스타일 및 Best Practices"
 category: "technical"
-author: "Vooster Team"
+author: "신우진"
 date: "2025-10-18"
 public: false
 order: 2

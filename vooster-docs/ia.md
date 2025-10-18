@@ -2,7 +2,7 @@
 title: "Information Architecture (IA)"
 description: "정보 구조 - 사이트맵, 화면 구성, 네비게이션 플로우"
 category: "design"
-author: "Vooster Team"
+author: "신우진"
 date: "2025-10-18"
 public: false
 order: 2

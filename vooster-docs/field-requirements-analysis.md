@@ -2,7 +2,7 @@
 title: "현장 요구사항 분석"
 description: "인쇄 생산 현장 바코드 시스템 - 실제 현장 요구사항 및 사용자 여정"
 category: "project"
-author: "Vooster Team"
+author: "신우진"
 date: "2025-01-14"
 public: false
 order: 2

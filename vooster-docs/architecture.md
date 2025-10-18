@@ -2,7 +2,7 @@
 title: "Technical Requirements Document (TRD)"
 description: "기술 요구사항 명세서 - 기술 스택 및 아키텍처"
 category: "technical"
-author: "Vooster Team"
+author: "신우진"
 date: "2025-10-18"
 public: false
 order: 1
