@@ -124,20 +124,12 @@ export default function Home() {
     }
 
     return (
-      <div className="flex items-center gap-3 text-sm">
-        <Link
-          href="/login"
-          className="rounded-md border border-border px-3 py-1 text-foreground transition hover:bg-muted"
-        >
-          로그인
-        </Link>
-        <Link
-          href="/signup"
-          className="rounded-md bg-primary px-3 py-1 text-primary-foreground transition hover:opacity-90"
-        >
-          회원가입
-        </Link>
-      </div>
+      <Link
+        href="/login"
+        className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+      >
+        로그인
+      </Link>
     );
   }, [handleSignOut, isAuthenticated, isLoading, user]);
 

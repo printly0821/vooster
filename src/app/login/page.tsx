@@ -141,13 +141,7 @@ function LoginPageContent() {
               {isSubmitting ? "로그인 중" : "로그인"}
             </button>
             <p className="text-xs text-muted-foreground">
-              계정이 없으신가요?{" "}
-              <Link
-                href="/signup"
-                className="font-medium text-foreground underline hover:opacity-80"
-              >
-                회원가입
-              </Link>
+              계정이 필요하신가요? 관리자에게 문의하세요.
             </p>
           </form>
           <figure className="overflow-hidden rounded-xl border border-border">
