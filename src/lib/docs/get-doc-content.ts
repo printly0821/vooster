@@ -14,11 +14,11 @@ export interface DocMetadata {
 }
 
 export interface DocContent {
-  metadata: DocMetadata;
-  content: string;
-  html: string;
-  toc: TocItem[];
-  slug: string;
+  readonly metadata: Readonly<DocMetadata>;
+  readonly content: string;
+  readonly html: string;
+  readonly toc: ReadonlyArray<TocItem>;
+  readonly slug: string;
 }
 
 /**

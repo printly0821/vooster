@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { getDocContent } from '@/lib/docs/get-doc-content';
 import MarkdownContent from '@/components/docs/MarkdownContent';
 import TableOfContents from '@/components/docs/TableOfContents';

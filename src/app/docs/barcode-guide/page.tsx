@@ -1,4 +1,6 @@
+import { Suspense } from 'react';
 import { DocPage, generateDocMetadata } from '@/components/docs/DocPage';
+import BarcodeGuideLoading from './loading';
 import type { Metadata } from 'next';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -6,5 +8,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function BarcodeGuidePage() {
-  return <DocPage slug="barcode-guide" />;
+  return (
+    <Suspense fallback={<BarcodeGuideLoading />}>
+      <DocPage slug="barcode-guide" />
+    </Suspense>
+  );
 }

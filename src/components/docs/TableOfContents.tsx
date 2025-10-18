@@ -5,13 +5,15 @@ import { cn } from '@/lib/utils';
 import type { TocItem } from '@/lib/docs/markdown';
 
 interface TableOfContentsProps {
-  toc: TocItem[];
+  toc: readonly TocItem[] | TocItem[];
 }
 
 export default function TableOfContents({ toc }: TableOfContentsProps) {
   const [activeId, setActiveId] = useState<string>('');
 
   useEffect(() => {
+    if (toc.length === 0) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -25,14 +27,18 @@ export default function TableOfContents({ toc }: TableOfContentsProps) {
       },
     );
 
-    // 모든 헤딩 관찰
-    const headings = document.querySelectorAll('h2, h3');
+    // toc의 id를 기반으로 헤딩 관찰
+    const headings = toc
+      .map((item) => document.getElementById(item.id))
+      .filter((el): el is HTMLElement => el !== null);
+
     headings.forEach((heading) => observer.observe(heading));
 
     return () => {
       headings.forEach((heading) => observer.unobserve(heading));
+      observer.disconnect();
     };
-  }, []);
+  }, [toc]);
 
   if (toc.length === 0) {
     return null;

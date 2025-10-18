@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, FileText } from 'lucide-react';
 import {
@@ -30,52 +30,66 @@ export default function SearchDialog({ open, onOpenChange }: SearchDialogProps) 
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  // 검색 실행 (API 호출)
-  useEffect(() => {
-    const searchAsync = async () => {
-      if (query.trim()) {
-        setIsLoading(true);
-        try {
-          const response = await fetch(
-            `/api/docs/search?q=${encodeURIComponent(query)}`
-          );
-          const searchResults = await response.json();
-          setResults(searchResults);
-          setSelectedIndex(0);
-        } catch (error) {
-          console.error('Search failed:', error);
-          setResults([]);
-        } finally {
-          setIsLoading(false);
-        }
-      } else {
-        setResults([]);
-      }
-    };
-
-    const debounce = setTimeout(searchAsync, 300);
-    return () => clearTimeout(debounce);
-  }, [query]);
-
-  // 키보드 네비게이션
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setSelectedIndex((i) => (i + 1) % results.length);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setSelectedIndex((i) => (i - 1 + results.length) % results.length);
-    } else if (e.key === 'Enter' && results[selectedIndex]) {
-      e.preventDefault();
-      navigateToDoc(results[selectedIndex].slug);
+  // 검색 함수 메모이제이션
+  const searchAsync = useCallback(async (searchQuery: string) => {
+    if (!searchQuery.trim()) {
+      setResults([]);
+      return;
     }
-  };
 
-  const navigateToDoc = (slug: string) => {
-    router.push(`/docs/${slug}`);
-    onOpenChange(false);
-    setQuery('');
-  };
+    setIsLoading(true);
+    try {
+      const response = await fetch(
+        `/api/docs/search?q=${encodeURIComponent(searchQuery)}`
+      );
+      if (!response.ok) {
+        throw new Error(`Search failed with status ${response.status}`);
+      }
+      const searchResults = await response.json();
+      setResults(Array.isArray(searchResults) ? searchResults : []);
+      setSelectedIndex(0);
+    } catch (error) {
+      console.error('Search failed:', error);
+      setResults([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // 검색 실행 (디바운싱 포함)
+  useEffect(() => {
+    const debounce = setTimeout(() => searchAsync(query), 300);
+    return () => clearTimeout(debounce);
+  }, [query, searchAsync]);
+
+  // 문서 네비게이션 메모이제이션
+  const navigateToDoc = useCallback(
+    (slug: string) => {
+      router.push(`/docs/${slug}`);
+      onOpenChange(false);
+      setQuery('');
+    },
+    [router, onOpenChange]
+  );
+
+  // 키보드 네비게이션 메모이제이션
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (results.length === 0) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedIndex((i) => (i + 1) % results.length);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedIndex((i) => (i - 1 + results.length) % results.length);
+      } else if (e.key === 'Enter' && results[selectedIndex]) {
+        e.preventDefault();
+        navigateToDoc(results[selectedIndex].slug);
+      }
+    },
+    [results, selectedIndex, navigateToDoc]
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
