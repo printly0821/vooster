@@ -20,6 +20,9 @@
     "env:check": "dotenv -e .env.local -- tsx scripts/check-env.ts"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/jetbrains-mono": "^5.2.8",
+    "@fontsource/noto-sans-kr": "^5.2.8",
     "@hookform/resolvers": "^4",
     "@radix-ui/react-accordion": "^1.2.3",
     "@radix-ui/react-aspect-ratio": "^1.1.7",

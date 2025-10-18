@@ -1,33 +1,19 @@
 import type { Metadata } from "next";
-import { Noto_Sans_KR, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import { loadCurrentUser } from "@/features/auth/server/load-current-user";
 import { CurrentUserProvider } from "@/features/auth/context/current-user-context";
 
-// 한글 최적화 폰트 - Noto Sans KR
-const notoSansKr = Noto_Sans_KR({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-sans",
-  display: "swap",
-});
-
-// 영문 폰트 - Inter
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-// 코드/숫자 폰트 - JetBrains Mono
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-mono",
-  display: "swap",
-});
+// Self-hosted fonts (Google Fonts 타임아웃 해결)
+import '@fontsource/noto-sans-kr/400.css';
+import '@fontsource/noto-sans-kr/500.css';
+import '@fontsource/noto-sans-kr/600.css';
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/jetbrains-mono/400.css';
+import '@fontsource/jetbrains-mono/500.css';
+import '@fontsource/jetbrains-mono/600.css';
 
 export const metadata: Metadata = {
   title: "바코드 주문 조회",
@@ -57,7 +43,7 @@ export default async function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <body
-        className={`antialiased ${notoSansKr.variable} ${inter.variable} ${jetbrainsMono.variable} font-sans`}
+        className="antialiased font-sans"
         suppressHydrationWarning
       >
         <Providers>
