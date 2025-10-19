@@ -135,10 +135,34 @@ export function useCameraStream(selectedDevice: CameraDevice | null) {
           finalConstraints
         );
 
+        // Phase 1: 진단 로그 - 실제 facingMode 검증
+        const videoTrack = newStream.getVideoTracks()[0];
+        const actualSettings = videoTrack?.getSettings();
+        const actualFacingMode = actualSettings?.facingMode;
+
         console.log('✅ getUserMedia 성공:', {
           streamId: newStream.id,
           tracks: newStream.getTracks().map(t => ({ kind: t.kind, label: t.label })),
         });
+
+        // 🔍 진단: facingMode 불일치 감지
+        if (selectedDevice) {
+          const mismatch = selectedDevice.facingMode !== actualFacingMode;
+
+          console.log(mismatch ? '🔴 [DIAGNOSIS] facingMode 불일치 감지!' : '✅ [DIAGNOSIS] facingMode 일치', {
+            deviceId: selectedDevice.deviceId,
+            deviceLabel: selectedDevice.label,
+            inferredFromLabel: selectedDevice.facingMode,
+            actualFromStream: actualFacingMode,
+            MISMATCH: mismatch,
+            actualSettings: {
+              width: actualSettings?.width,
+              height: actualSettings?.height,
+              facingMode: actualSettings?.facingMode,
+              deviceId: actualSettings?.deviceId,
+            },
+          });
+        }
 
         // Check if component is still mounted before updating state
         if (!isMountedRef.current) {

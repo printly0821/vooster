@@ -7,7 +7,7 @@ import {
   useCameraState,
   useCameraActions,
 } from '@/features/camera';
-import { getCameraDisplayName, groupCamerasByFacingMode } from '@/features/camera/lib/device-utils';
+import { getCameraDisplayName, groupCamerasByFacingMode, correctFacingModeWithStream } from '@/features/camera/lib/device-utils';
 import { useLastUsedCamera } from '../_hooks/useLastUsedCamera';
 import { ScannerSettings, COOLDOWN_OPTIONS } from '../_types/settings';
 
@@ -51,6 +51,9 @@ export const SettingsDrawer = React.memo<SettingsDrawerProps>(
   // P1-2: 에러 상태
   const [cameraError, setCameraError] = React.useState<string | null>(null);
   const errorTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  // Phase 3: facingMode 보정 상태
+  const [facingModeCorrected, setFacingModeCorrected] = React.useState(false);
 
   // 초기화 진행 중 플래그 (중복 호출 방지)
   const isInitializingRef = React.useRef(false);
@@ -193,6 +196,36 @@ export const SettingsDrawer = React.memo<SettingsDrawerProps>(
       }
     };
   }, []);
+
+  // Phase 3: Stream 검증 - facingMode 불일치 감지 및 사용자 피드백
+  React.useEffect(() => {
+    if (!stream || !selectedDevice) return;
+
+    const videoTrack = stream.getVideoTracks()[0];
+    if (!videoTrack) return;
+
+    const actualSettings = videoTrack.getSettings();
+    const actualFacingMode = actualSettings.facingMode as 'user' | 'environment' | undefined;
+
+    // 불일치 감지
+    if (selectedDevice.facingMode &&
+        actualFacingMode &&
+        selectedDevice.facingMode !== actualFacingMode) {
+
+      console.error('🔴 [BUG] facingMode 불일치 발견!', {
+        deviceId: selectedDevice.deviceId,
+        deviceLabel: selectedDevice.label,
+        displayName: getCameraDisplayName(selectedDevice),
+        inferredFromLabel: selectedDevice.facingMode,
+        actualFromStream: actualFacingMode,
+        warning: '사용자가 보는 카메라와 표시된 이름이 다릅니다!',
+      });
+
+      // 사용자에게 피드백
+      setFacingModeCorrected(true);
+      setTimeout(() => setFacingModeCorrected(false), 5000);
+    }
+  }, [stream, selectedDevice]);
 
   // 드로어 열 때 카메라 자동 초기화 (P0-1 개선)
   React.useEffect(() => {
@@ -481,6 +514,29 @@ export const SettingsDrawer = React.memo<SettingsDrawerProps>(
                       <button
                         onClick={() => setCameraError(null)}
                         className="mt-1 text-xs text-red-600 underline hover:text-red-800"
+                      >
+                        닫기
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Phase 4: facingMode 불일치 경고 */}
+              {facingModeCorrected && (
+                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <span className="text-blue-600 text-lg shrink-0">ℹ️</span>
+                    <div className="flex-1">
+                      <p className="text-sm text-blue-700 font-medium">
+                        카메라 정보가 자동 보정되었습니다
+                      </p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        미리보기를 확인하여 올바른 카메라가 선택되었는지 확인해주세요.
+                      </p>
+                      <button
+                        onClick={() => setFacingModeCorrected(false)}
+                        className="mt-1 text-xs text-blue-600 underline hover:text-blue-800"
                       >
                         닫기
                       </button>

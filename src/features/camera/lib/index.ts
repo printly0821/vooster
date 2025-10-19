@@ -60,4 +60,5 @@ export {
   getCameraDisplayName,
   areDeviceListsEqual,
   getDefaultCamera,
+  correctFacingModeWithStream, // Phase 2: facingMode 자동 보정
 } from './device-utils';

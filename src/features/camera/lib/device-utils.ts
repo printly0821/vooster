@@ -260,3 +260,63 @@ export function getDefaultCamera(devices: CameraDevice[]): CameraDevice | null {
   // Fall back to first available camera
   return devices[0] ?? null;
 }
+
+/**
+ * Phase 2: Stream의 실제 facingMode로 디바이스 정보 보정
+ *
+ * Android 일부 기기에서 device.label이 잘못 작성되어 있어
+ * label 기반 추론이 실패하는 경우를 해결합니다.
+ *
+ * @param device - label 기반으로 추론된 디바이스
+ * @param stream - 실제 MediaStream
+ * @returns 보정된 디바이스 (facingMode가 실제 값으로 업데이트됨)
+ *
+ * @example
+ * ```ts
+ * const stream = await getUserMedia({ deviceId: device.deviceId });
+ * const correctedDevice = correctFacingModeWithStream(device, stream);
+ *
+ * if (correctedDevice.facingMode !== device.facingMode) {
+ *   console.log('facingMode 보정됨:', device.facingMode, '→', correctedDevice.facingMode);
+ * }
+ * ```
+ */
+export function correctFacingModeWithStream(
+  device: CameraDevice,
+  stream: MediaStream
+): CameraDevice {
+  const videoTrack = stream.getVideoTracks()[0];
+  if (!videoTrack) {
+    console.warn('⚠️ correctFacingModeWithStream: video track이 없습니다');
+    return device;
+  }
+
+  const actualSettings = videoTrack.getSettings();
+  const actualFacingMode = actualSettings.facingMode as 'user' | 'environment' | undefined;
+
+  // 실제 facingMode가 없으면 보정 불가
+  if (!actualFacingMode) {
+    console.log('ℹ️ correctFacingModeWithStream: 실제 facingMode를 알 수 없습니다');
+    return device;
+  }
+
+  // 불일치 감지
+  if (device.facingMode !== actualFacingMode) {
+    console.warn('🔄 [CORRECTION] facingMode 자동 보정:', {
+      deviceId: device.deviceId,
+      deviceLabel: device.label,
+      inferredFromLabel: device.facingMode || 'undefined',
+      actualFromStream: actualFacingMode,
+      correction: '실제 Stream 값 사용',
+    });
+
+    return {
+      ...device,
+      facingMode: actualFacingMode,
+    };
+  }
+
+  // 일치하면 그대로 반환
+  console.log('✅ correctFacingModeWithStream: facingMode 일치 확인');
+  return device;
+}
