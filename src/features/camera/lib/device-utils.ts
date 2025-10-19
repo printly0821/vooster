@@ -180,21 +180,46 @@ export function isValidDeviceId(deviceId: string): boolean {
  * Creates a display name for camera device
  *
  * Generates user-friendly name based on label and facing mode
+ * P0-2: 개선된 한글화 로직
  */
 export function getCameraDisplayName(device: CameraDevice): string {
-  if (device.label && !device.label.startsWith('Camera ')) {
+  // 1. 유의미한 라벨이면 그대로 사용 (원본 디바이스 라벨)
+  if (device.label &&
+      !device.label.startsWith('Camera ') &&
+      !device.label.includes('camera2 0') &&
+      device.label.toLowerCase() !== 'unknown') {
     return device.label;
   }
 
+  // 2. facingMode 기반 명확한 한글 이름
   if (device.facingMode === 'environment') {
-    return '후면 카메라';
+    return '후면 카메라 (바코드 스캔 권장)';
   }
 
   if (device.facingMode === 'user') {
     return '전면 카메라';
   }
 
-  return device.label || '카메라';
+  // 3. label에서 facing 정보 파싱 시도
+  if (device.label) {
+    const lowerLabel = device.label.toLowerCase();
+
+    if (lowerLabel.includes('back') || lowerLabel.includes('rear')) {
+      return '후면 카메라 (바코드 스캔 권장)';
+    }
+
+    if (lowerLabel.includes('front') || lowerLabel.includes('selfie')) {
+      return '전면 카메라';
+    }
+
+    // label이 있으면 그대로 반환
+    if (device.label) {
+      return device.label;
+    }
+  }
+
+  // 4. 최후 수단: deviceId 일부 사용
+  return `카메라 (${device.deviceId.slice(0, 8)})`;
 }
 
 /**

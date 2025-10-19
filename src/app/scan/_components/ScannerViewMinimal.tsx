@@ -26,6 +26,7 @@ interface ScannerViewMinimalProps {
   onOpenInfo: () => void;
   settings: ScannerSettings;
   scanStatus: ScanStatus;
+  isPaused?: boolean;
 }
 
 /**
@@ -41,6 +42,7 @@ export function ScannerViewMinimal({
   onOpenInfo,
   settings,
   scanStatus,
+  isPaused,
 }: ScannerViewMinimalProps) {
   return (
     <ScannerFullscreenMinimal
@@ -50,6 +52,7 @@ export function ScannerViewMinimal({
       onOpenInfo={onOpenInfo}
       settings={settings}
       scanStatus={scanStatus}
+      isPaused={isPaused}
     />
   );
 }
@@ -64,6 +67,7 @@ function ScannerFullscreenMinimal({
   onOpenInfo,
   settings,
   scanStatus,
+  isPaused,
 }: Omit<ScannerViewMinimalProps, 'onBarcodeDetected'> & {
   onBarcodeDetected: (result: BarcodeResult) => void;
 }) {
@@ -424,6 +428,7 @@ function ScannerFullscreenMinimal({
             stream={stream}
             videoElement={videoRef.current}
             config={barcodeScannerConfig}
+            paused={isPaused}
             showScanGuide={false}
             showTorchToggle={false}
             showFocusButton={false}

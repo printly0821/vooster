@@ -56,6 +56,9 @@ export interface BarcodeScannerProps {
   /** Whether to show scan guide overlay with frame */
   showScanGuide?: boolean;
 
+  /** Whether barcode scanning is paused (detection ignored but decoder continues) */
+  paused?: boolean;
+
   /** Callback when barcode is successfully detected */
   onScan?: (result: BarcodeResult) => void;
 
@@ -96,6 +99,7 @@ function BarcodeScannerComponent({
   showTorchToggle = true,
   showFocusButton = true,
   showScanGuide = true,
+  paused = false,
   onScan,
   onError,
 }: BarcodeScannerProps) {
@@ -107,11 +111,13 @@ function BarcodeScannerComponent({
   // Barcode scanner hook with success feedback
   const {
     isScanning,
-    isPaused,
+    isPaused: isInternallyPaused,
     lastResult,
     error: scanError,
     startScanning,
     stopScanning,
+    pauseScanning,
+    resumeScanning,
   } = useBarcodeScanner(stream, videoElement, {
     ...config,
     onDetected: React.useCallback(
@@ -139,6 +145,15 @@ function BarcodeScannerComponent({
       [onError, config]
     ),
   });
+
+  // Handle pause/resume based on external paused prop
+  React.useEffect(() => {
+    if (paused) {
+      pauseScanning();
+    } else {
+      resumeScanning();
+    }
+  }, [paused, pauseScanning, resumeScanning]);
 
   // Torch control hook
   const { torchCapability, toggleTorch } = useCameraTorch(stream);
@@ -275,7 +290,7 @@ function BarcodeScannerComponent({
               />
 
               {/* Animated scanning line */}
-              {isScanning && !isPaused && !showSuccess && (
+              {isScanning && !isInternallyPaused && !showSuccess && (
                 <div
                   className="absolute inset-0 overflow-hidden rounded-xl"
                   aria-hidden="true"
@@ -298,7 +313,7 @@ function BarcodeScannerComponent({
                   <CheckCircle2 className="w-5 h-5 text-green-400" aria-hidden="true" />
                   스캔 완료!
                 </span>
-              ) : isPaused ? (
+              ) : isInternallyPaused ? (
                 <span className="flex items-center justify-center gap-2">
                   <Scan className="w-5 h-5" aria-hidden="true" />
                   일시 정지됨
@@ -427,9 +442,10 @@ export const BarcodeScanner = React.memo(
     const streamChanged = prevProps.stream?.id !== nextProps.stream?.id;
     const videoElementChanged = prevProps.videoElement !== nextProps.videoElement;
     const configChanged = prevProps.config !== nextProps.config;
+    const pausedChanged = prevProps.paused !== nextProps.paused;
 
     // Return true if props are equal (no re-render needed)
-    return !streamChanged && !videoElementChanged && !configChanged;
+    return !streamChanged && !videoElementChanged && !configChanged && !pausedChanged;
   }
 );
 

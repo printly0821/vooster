@@ -141,6 +141,7 @@ export default function ScanPage() {
             onOpenInfo={() => setInfoOpen(true)}
             settings={settings}
             scanStatus={scanStatus}
+            isPaused={settingsOpen}
           />
         </div>
 
