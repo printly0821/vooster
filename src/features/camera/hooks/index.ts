@@ -12,6 +12,11 @@ export {
   useCameraReady,
   useCameraError,
   useCameraStreamOnly,
+  // P2-1: Selective Hooks (리렌더링 최소화)
+  useCameraDevicesOnly,
+  useCameraPermissionsOnly,
+  useBarcodeScannerOnly,
+  useCameraTorchOnly,
 } from './useCamera';
 
 // Internal hooks (exported for advanced use cases)

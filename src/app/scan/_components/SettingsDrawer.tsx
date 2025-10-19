@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { X, Smartphone, Zap, Vibrate, Settings2 } from 'lucide-react';
+import { X, Smartphone, Zap, Vibrate, Settings2, Camera, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   useCameraState,
@@ -332,35 +332,66 @@ export const SettingsDrawer = React.memo<SettingsDrawerProps>(
               </div>
             </div>
 
-            {/* 카메라 선택 */}
+            {/* P2-2: 카드 기반 카메라 선택 UI */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
                 사용할 카메라 선택
               </label>
               {devices.length > 0 ? (
-                <select
-                  value={lastCameraId || devices[0]?.deviceId || ''}
-                  onChange={(e) => handleCameraChange(e.target.value)}
-                  className={cn(
-                    'w-full px-3 py-2 rounded-lg',
-                    'border border-gray-300',
-                    'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-                    'text-gray-900 bg-white'
-                  )}
-                >
-                  {devices.map((device) => (
-                    <option key={device.deviceId} value={device.deviceId}>
-                      {getCameraDisplayName(device)}
-                    </option>
-                  ))}
-                </select>
+                <div className="grid grid-cols-2 gap-2">
+                  {devices.map((device) => {
+                    const isSelected = device.deviceId === (lastCameraId || selectedDevice?.deviceId);
+                    const displayName = getCameraDisplayName(device);
+
+                    return (
+                      <button
+                        key={device.deviceId}
+                        onClick={() => handleCameraChange(device.deviceId)}
+                        className={cn(
+                          'relative p-4 rounded-lg border-2 transition-all text-left',
+                          'min-h-[88px] flex flex-col items-center justify-center gap-2',
+                          isSelected
+                            ? 'border-green-500 bg-green-50'
+                            : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                        )}
+                      >
+                        {/* 카메라 아이콘 */}
+                        <div className={cn(
+                          'w-8 h-8 rounded-full flex items-center justify-center shrink-0',
+                          isSelected ? 'bg-green-500' : 'bg-gray-200'
+                        )}>
+                          <Camera className={cn(
+                            'w-5 h-5',
+                            isSelected ? 'text-white' : 'text-gray-600'
+                          )} />
+                        </div>
+
+                        {/* 카메라 이름 */}
+                        <p className={cn(
+                          'text-sm font-medium text-center leading-tight',
+                          isSelected ? 'text-green-900' : 'text-gray-900'
+                        )}>
+                          {displayName}
+                        </p>
+
+                        {/* 선택 표시 */}
+                        {isSelected && (
+                          <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                            <Check className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               ) : (
-                <div className="p-3 bg-gray-100 rounded-lg text-sm text-gray-600">
-                  사용 가능한 카메라가 없습니다
+                <div className="p-4 bg-gray-100 rounded-lg text-center">
+                  <Camera className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                  <p className="text-sm text-gray-600">사용 가능한 카메라가 없습니다</p>
                 </div>
               )}
-              <p className="text-xs text-gray-500 mt-1">
-                전면/후면 카메라 중 선택합니다
+              <p className="text-xs text-gray-500 mt-2">
+                카드를 선택하면 미리보기가 즉시 업데이트됩니다
               </p>
 
               {/* P1-2: 에러 메시지 표시 */}

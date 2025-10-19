@@ -230,3 +230,113 @@ export function useCameraStreamOnly(): MediaStream | null {
   const { stream } = useCameraState();
   return stream;
 }
+
+/**
+ * Hook to access camera devices only
+ *
+ * P2-1: Selective Hook for devices - 리렌더링 최소화
+ *
+ * @example
+ * ```tsx
+ * function DeviceSelector() {
+ *   const { devices, selectedDevice } = useCameraDevicesOnly();
+ *
+ *   return (
+ *     <select>
+ *       {devices.map(d => <option value={d.deviceId}>{d.label}</option>)}
+ *     </select>
+ *   );
+ * }
+ * ```
+ */
+export function useCameraDevicesOnly() {
+  const context = useCamera();
+
+  return useMemo(
+    () => ({
+      devices: context.devices,
+      selectedDevice: context.selectedDevice,
+      isEnumeratingDevices: context.isEnumeratingDevices,
+    }),
+    [context.devices, context.selectedDevice, context.isEnumeratingDevices]
+  );
+}
+
+/**
+ * Hook to access camera permissions only
+ *
+ * P2-1: Selective Hook for permissions - 리렌더링 최소화
+ *
+ * @example
+ * ```tsx
+ * function PermissionPrompt() {
+ *   const { permissionState, isCheckingPermission } = useCameraPermissionsOnly();
+ *
+ *   return <div>Permission: {permissionState}</div>;
+ * }
+ * ```
+ */
+export function useCameraPermissionsOnly() {
+  const context = useCamera();
+
+  return useMemo(
+    () => ({
+      permissionState: context.permissionState,
+      isCheckingPermission: context.isCheckingPermission,
+    }),
+    [context.permissionState, context.isCheckingPermission]
+  );
+}
+
+/**
+ * Hook to access barcode scanner state only
+ *
+ * P2-1: Selective Hook for barcode scanner - 리렌더링 최소화
+ *
+ * @example
+ * ```tsx
+ * function ScannerStatus() {
+ *   const { isScanning, isPaused, lastResult } = useBarcodeScannerOnly();
+ *
+ *   return <div>Scanning: {isScanning ? 'Yes' : 'No'}</div>;
+ * }
+ * ```
+ */
+export function useBarcodeScannerOnly() {
+  const context = useCamera();
+
+  return useMemo(
+    () => context.barcodeScanner,
+    [context.barcodeScanner]
+  );
+}
+
+/**
+ * Hook to access camera torch capability only
+ *
+ * P2-1: Selective Hook for torch - 리렌더링 최소화
+ *
+ * @example
+ * ```tsx
+ * function FlashToggle() {
+ *   const torchCapability = useCameraTorchOnly();
+ *   const { toggleTorch } = useCameraActions();
+ *
+ *   if (!torchCapability.isSupported) return null;
+ *
+ *   return (
+ *     <button onClick={toggleTorch}>
+ *       Flash: {torchCapability.isEnabled ? 'ON' : 'OFF'}
+ *     </button>
+ *   );
+ * }
+ * ```
+ */
+export function useCameraTorchOnly() {
+  const context = useCamera();
+
+  return useMemo(
+    () => context.torchCapability,
+    [context.torchCapability]
+  );
+}
