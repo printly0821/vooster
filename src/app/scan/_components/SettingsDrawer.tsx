@@ -26,13 +26,16 @@ interface SettingsDrawerProps {
  * - 진동 피드백
  * - 쿨다운 시간
  * - 마지막 카메라 기억
+ *
+ * P1-3: React.memo로 최적화
  */
-export function SettingsDrawer({
-  open,
-  onClose,
-  settings,
-  onSettingsChange,
-}: SettingsDrawerProps) {
+export const SettingsDrawer = React.memo<SettingsDrawerProps>(
+  function SettingsDrawer({
+    open,
+    onClose,
+    settings,
+    onSettingsChange,
+  }: SettingsDrawerProps) {
   const { devices, stream, selectedDevice } = useCameraState();
   const { selectDevice, startStream } = useCameraActions();
   const { lastCameraId, rememberCamera, saveLastCamera, toggleRememberCamera } =
@@ -45,8 +48,15 @@ export function SettingsDrawer({
   const [showToast, setShowToast] = React.useState(false);
   const toastTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
+  // P1-2: 에러 상태
+  const [cameraError, setCameraError] = React.useState<string | null>(null);
+  const errorTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
   // 초기화 진행 중 플래그 (중복 호출 방지)
   const isInitializingRef = React.useRef(false);
+
+  // P1-1: 카메라 전환 중복 방지 (useRef)
+  const isChangingCameraRef = React.useRef(false);
 
   // 카메라 미리보기 스트림 연결
   React.useEffect(() => {
@@ -75,8 +85,26 @@ export function SettingsDrawer({
     playWithRetry().catch(console.error);
   }, [stream]);
 
-  const handleCameraChange = async (deviceId: string) => {
+  // P1-3: SettingToggle onChange 핸들러들을 useCallback으로 안정화
+  const handleAutoFocusChange = React.useCallback((checked: boolean) => {
+    onSettingsChange({ autoFocus: checked });
+  }, [onSettingsChange]);
+
+  const handleVibrationChange = React.useCallback((checked: boolean) => {
+    onSettingsChange({ vibrationEnabled: checked });
+  }, [onSettingsChange]);
+
+  // P1-1: useCallback으로 감싸고 중복 방지 로직 추가
+  const handleCameraChange = React.useCallback(async (deviceId: string) => {
+    // P1-1: 중복 클릭 방지
+    if (isChangingCameraRef.current) {
+      console.warn('⚠️ 카메라 변경 중입니다. 잠시만 기다려주세요.');
+      return;
+    }
+
     try {
+      isChangingCameraRef.current = true;
+
       // 선택된 카메라 정보 조회
       const selectedCameraDevice = devices.find(d => d.deviceId === deviceId);
 
@@ -107,14 +135,35 @@ export function SettingsDrawer({
       });
     } catch (error) {
       console.error('❌ 카메라 변경 실패:', error);
-    }
-  };
 
-  // Cleanup toast timeout on unmount
+      // P1-2: 에러 메시지 설정
+      const errorMessage = error instanceof Error
+        ? error.message
+        : '카메라를 시작할 수 없습니다';
+
+      setCameraError(errorMessage);
+
+      // 5초 후 자동 해제
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
+      }
+      errorTimeoutRef.current = setTimeout(() => {
+        setCameraError(null);
+      }, 5000);
+    } finally {
+      isChangingCameraRef.current = false;
+    }
+  }, [devices, selectDevice, startStream, saveLastCamera]);
+  // ⚠️ isChangingCameraRef는 deps에 포함하지 않음 (useRef는 무시)
+
+  // Cleanup timeouts on unmount
   React.useEffect(() => {
     return () => {
       if (toastTimeoutRef.current) {
         clearTimeout(toastTimeoutRef.current);
+      }
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
       }
     };
   }, []);
@@ -313,6 +362,24 @@ export function SettingsDrawer({
               <p className="text-xs text-gray-500 mt-1">
                 전면/후면 카메라 중 선택합니다
               </p>
+
+              {/* P1-2: 에러 메시지 표시 */}
+              {cameraError && (
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <span className="text-red-600 text-lg shrink-0">⚠️</span>
+                    <div className="flex-1">
+                      <p className="text-sm text-red-700 font-medium">{cameraError}</p>
+                      <button
+                        onClick={() => setCameraError(null)}
+                        className="mt-1 text-xs text-red-600 underline hover:text-red-800"
+                      >
+                        닫기
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 마지막 카메라 기억 */}
@@ -368,16 +435,14 @@ export function SettingsDrawer({
               label="자동 초점"
               description="스캔 시 자동으로 초점을 맞춥니다"
               checked={settings.autoFocus}
-              onChange={(checked) => onSettingsChange({ autoFocus: checked })}
+              onChange={handleAutoFocusChange}
             />
 
             <SettingToggle
               label="진동 피드백"
               description="바코드 스캔 성공 시 진동합니다"
               checked={settings.vibrationEnabled}
-              onChange={(checked) =>
-                onSettingsChange({ vibrationEnabled: checked })
-              }
+              onChange={handleVibrationChange}
             />
           </section>
 
@@ -458,45 +523,51 @@ export function SettingsDrawer({
       )}
     </>
   );
-}
+  }
+);
 
 /**
  * 토글 설정 항목 컴포넌트
+ * P1-3: React.memo로 최적화
  */
-function SettingToggle({
-  label,
-  description,
-  checked,
-  onChange,
-}: {
+interface SettingToggleProps {
   label: string;
   description: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
-}) {
-  return (
-    <div className="flex items-start justify-between py-3 border-b border-gray-200 last:border-0">
-      <div className="flex-1">
-        <p className="text-sm font-medium text-gray-900">{label}</p>
-        <p className="text-xs text-gray-500 mt-0.5">{description}</p>
-      </div>
-      <button
-        onClick={() => onChange(!checked)}
-        className={cn(
-          'relative inline-flex w-12 h-6 items-center rounded-full transition-colors',
-          'ml-3 shrink-0',
-          checked ? 'bg-blue-600' : 'bg-gray-300'
-        )}
-        role="switch"
-        aria-checked={checked}
-      >
-        <span
-          className={cn(
-            'inline-block w-5 h-5 rounded-full bg-white transition-transform',
-            checked ? 'translate-x-6' : 'translate-x-1'
-          )}
-        />
-      </button>
-    </div>
-  );
 }
+
+const SettingToggle = React.memo<SettingToggleProps>(
+  function SettingToggle({ label, description, checked, onChange }) {
+    // P1-3: useCallback으로 핸들러 안정화
+    const handleClick = React.useCallback(() => {
+      onChange(!checked);
+    }, [checked, onChange]);
+
+    return (
+      <div className="flex items-start justify-between py-3 border-b border-gray-200 last:border-0">
+        <div className="flex-1">
+          <p className="text-sm font-medium text-gray-900">{label}</p>
+          <p className="text-xs text-gray-500 mt-0.5">{description}</p>
+        </div>
+        <button
+          onClick={handleClick}
+          className={cn(
+            'relative inline-flex w-12 h-6 items-center rounded-full transition-colors',
+            'ml-3 shrink-0',
+            checked ? 'bg-blue-600' : 'bg-gray-300'
+          )}
+          role="switch"
+          aria-checked={checked}
+        >
+          <span
+            className={cn(
+              'inline-block w-5 h-5 rounded-full bg-white transition-transform',
+              checked ? 'translate-x-6' : 'translate-x-1'
+            )}
+          />
+        </button>
+      </div>
+    );
+  }
+);
