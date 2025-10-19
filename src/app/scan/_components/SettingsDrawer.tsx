@@ -7,7 +7,7 @@ import {
   useCameraState,
   useCameraActions,
 } from '@/features/camera';
-import { getCameraDisplayName } from '@/features/camera/lib/device-utils';
+import { getCameraDisplayName, groupCamerasByFacingMode } from '@/features/camera/lib/device-utils';
 import { useLastUsedCamera } from '../_hooks/useLastUsedCamera';
 import { ScannerSettings, COOLDOWN_OPTIONS } from '../_types/settings';
 
@@ -84,6 +84,32 @@ export const SettingsDrawer = React.memo<SettingsDrawerProps>(
 
     playWithRetry().catch(console.error);
   }, [stream]);
+
+  // Phase 2: 카메라 그룹화 (전면/후면 구분)
+  const groupedDevices = React.useMemo(() => {
+    const { back, front, unknown } = groupCamerasByFacingMode(devices);
+
+    return [
+      {
+        label: '후면 카메라',
+        devices: back,
+        recommended: true,
+        icon: Camera,
+      },
+      {
+        label: '전면 카메라',
+        devices: front,
+        recommended: false,
+        icon: Camera,
+      },
+      ...(unknown.length > 0 ? [{
+        label: '기타 카메라',
+        devices: unknown,
+        recommended: false,
+        icon: Camera,
+      }] : [])
+    ].filter(group => group.devices.length > 0);
+  }, [devices]);
 
   // P1-3: SettingToggle onChange 핸들러들을 useCallback으로 안정화
   const handleAutoFocusChange = React.useCallback((checked: boolean) => {
@@ -196,8 +222,33 @@ export const SettingsDrawer = React.memo<SettingsDrawerProps>(
           return;
         }
 
-        // 3. 복원할 카메라 결정 (lastCameraId 우선)
-        const targetId = lastCameraId || devices[0]?.deviceId;
+        // Phase 3: 스마트 자동선택 로직 개선
+        let targetId: string | undefined;
+
+        // 1순위: lastCameraId (사용자가 이전에 선택한 카메라)
+        if (lastCameraId && devices.some(d => d.deviceId === lastCameraId)) {
+          targetId = lastCameraId;
+          console.log('✅ 저장된 카메라 복원:', targetId);
+        }
+        // 2순위: 후면 카메라(environment) - 바코드 스캔에 최적
+        else {
+          const backCamera = devices.find(d =>
+            d.facingMode === 'environment' ||
+            d.label?.toLowerCase().includes('back') ||
+            d.label?.toLowerCase().includes('rear')
+          );
+
+          if (backCamera) {
+            targetId = backCamera.deviceId;
+            console.log('✅ 후면 카메라 자동 선택:', targetId);
+          }
+          // 3순위: 첫 번째 카메라 (fallback)
+          else if (devices[0]) {
+            targetId = devices[0].deviceId;
+            console.log('✅ 첫 번째 카메라 선택:', targetId);
+          }
+        }
+
         if (!targetId) {
           console.warn('⚠️ SettingsDrawer: 사용 가능한 카메라 없음');
           return;
@@ -332,57 +383,82 @@ export const SettingsDrawer = React.memo<SettingsDrawerProps>(
               </div>
             </div>
 
-            {/* P2-2: 카드 기반 카메라 선택 UI */}
-            <div className="space-y-2">
+            {/* Phase 2: 그룹화된 카메라 선택 UI */}
+            <div className="space-y-4">
               <label className="text-sm font-medium text-gray-700">
                 사용할 카메라 선택
               </label>
+
               {devices.length > 0 ? (
-                <div className="grid grid-cols-2 gap-2">
-                  {devices.map((device) => {
-                    const isSelected = device.deviceId === (lastCameraId || selectedDevice?.deviceId);
-                    const displayName = getCameraDisplayName(device);
-
-                    return (
-                      <button
-                        key={device.deviceId}
-                        onClick={() => handleCameraChange(device.deviceId)}
-                        className={cn(
-                          'relative p-4 rounded-lg border-2 transition-all text-left',
-                          'min-h-[88px] flex flex-col items-center justify-center gap-2',
-                          isSelected
-                            ? 'border-green-500 bg-green-50'
-                            : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-                        )}
-                      >
-                        {/* 카메라 아이콘 */}
-                        <div className={cn(
-                          'w-8 h-8 rounded-full flex items-center justify-center shrink-0',
-                          isSelected ? 'bg-green-500' : 'bg-gray-200'
-                        )}>
-                          <Camera className={cn(
-                            'w-5 h-5',
-                            isSelected ? 'text-white' : 'text-gray-600'
-                          )} />
+                <div className="space-y-4">
+                  {groupedDevices.map((group) => (
+                    <div key={group.label}>
+                      {/* 그룹 헤더 (그룹이 2개 이상일 때만 표시) */}
+                      {groupedDevices.length > 1 && (
+                        <div className="flex items-center gap-2 mb-2">
+                          <group.icon className="w-4 h-4 text-gray-600" />
+                          <h4 className="text-sm font-semibold text-gray-700">
+                            {group.label}
+                          </h4>
+                          {group.recommended && (
+                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                              권장
+                            </span>
+                          )}
                         </div>
+                      )}
 
-                        {/* 카메라 이름 */}
-                        <p className={cn(
-                          'text-sm font-medium text-center leading-tight',
-                          isSelected ? 'text-green-900' : 'text-gray-900'
-                        )}>
-                          {displayName}
-                        </p>
+                      {/* 카드 그리드 */}
+                      <div className="grid grid-cols-2 gap-2">
+                        {group.devices.map((device) => {
+                          const isSelected = device.deviceId === (lastCameraId || selectedDevice?.deviceId);
+                          const displayName = getCameraDisplayName(device);
 
-                        {/* 선택 표시 */}
-                        {isSelected && (
-                          <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-                            <Check className="w-3 h-3 text-white" />
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
+                          return (
+                            <button
+                              key={device.deviceId}
+                              onClick={() => handleCameraChange(device.deviceId)}
+                              className={cn(
+                                'relative p-4 rounded-lg border-2 transition-all text-left',
+                                'min-h-[88px] flex flex-col items-center justify-center gap-2',
+                                isSelected
+                                  ? 'border-green-500 bg-green-50'
+                                  : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                              )}
+                              role="radio"
+                              aria-checked={isSelected}
+                            >
+                              {/* 카메라 아이콘 */}
+                              <div className={cn(
+                                'w-8 h-8 rounded-full flex items-center justify-center shrink-0',
+                                isSelected ? 'bg-green-500' : 'bg-gray-200'
+                              )}>
+                                <Camera className={cn(
+                                  'w-5 h-5',
+                                  isSelected ? 'text-white' : 'text-gray-600'
+                                )} />
+                              </div>
+
+                              {/* 카메라 이름 */}
+                              <p className={cn(
+                                'text-sm font-medium text-center leading-tight',
+                                isSelected ? 'text-green-900' : 'text-gray-900'
+                              )}>
+                                {displayName}
+                              </p>
+
+                              {/* 선택 표시 */}
+                              {isSelected && (
+                                <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                                  <Check className="w-3 h-3 text-white" />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="p-4 bg-gray-100 rounded-lg text-center">
@@ -390,6 +466,7 @@ export const SettingsDrawer = React.memo<SettingsDrawerProps>(
                   <p className="text-sm text-gray-600">사용 가능한 카메라가 없습니다</p>
                 </div>
               )}
+
               <p className="text-xs text-gray-500 mt-2">
                 카드를 선택하면 미리보기가 즉시 업데이트됩니다
               </p>

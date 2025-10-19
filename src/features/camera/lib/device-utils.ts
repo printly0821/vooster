@@ -146,8 +146,9 @@ export function sortCamerasByPriority(devices: CameraDevice[]): CameraDevice[] {
 
 /**
  * Groups cameras by facing mode
+ * P2: readonly 파라미터로 타입 안정성 향상
  */
-export function groupCamerasByFacingMode(devices: CameraDevice[]): {
+export function groupCamerasByFacingMode(devices: readonly CameraDevice[]): {
   back: CameraDevice[];
   front: CameraDevice[];
   unknown: CameraDevice[];
