@@ -48,7 +48,7 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
           cookiesToSet.forEach(({ name, value, options }: { name: string; value: string; options?: any }) => {
-            request.cookies.set({ name, value, ...options });
+            // Next.js 15: request.cookies는 readonly - response만 수정 가능
             response.cookies.set({ name, value, ...options });
           });
         },
