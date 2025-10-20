@@ -7,7 +7,7 @@ import {
   useCameraState,
   useCameraActions,
 } from '@/features/camera';
-import { getCameraDisplayName, groupCamerasByFacingMode, correctFacingModeWithStream } from '@/features/camera/lib/device-utils';
+import { getCameraDisplayName, groupCamerasByFacingMode } from '@/features/camera/lib/device-utils';
 import { useLastUsedCamera } from '../_hooks/useLastUsedCamera';
 import { ScannerSettings, COOLDOWN_OPTIONS } from '../_types/settings';
 
