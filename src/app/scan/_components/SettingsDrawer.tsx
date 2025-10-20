@@ -199,6 +199,11 @@ export const SettingsDrawer = React.memo<SettingsDrawerProps>(
 
   // Phase 3: Stream 검증 - facingMode 불일치 감지 및 사용자 피드백
   React.useEffect(() => {
+    // 🔒 Vercel SSR 가드 - MediaStream API는 브라우저 전용
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     if (!stream || !selectedDevice) return;
 
     const videoTrack = stream.getVideoTracks()[0];
