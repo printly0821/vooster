@@ -42,11 +42,10 @@ export const createSupabaseServerClient = async (): Promise<
           return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            if (typeof cookieStore.set === "function") {
-              cookieStore.set({ name, value, ...options });
-            }
-          });
+          // Next.js 15: Server Component에서 cookies 수정 불가
+          // 읽기 전용 모드로 설정 - Vercel 배포 에러 해결
+          // 토큰 갱신은 클라이언트 컴포넌트에서 자동 처리됨
+          // https://nextjs.org/docs/app/api-reference/functions/cookies#options
         },
       },
     }
