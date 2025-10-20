@@ -228,3 +228,70 @@ export type BarcodeFormat = (typeof SUPPORTED_BARCODE_FORMATS)[number];
  * Small delay to allow hardware to respond after torch state change
  */
 export const TORCH_TOGGLE_DELAY_MS = 100;
+
+/**
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ * Camera Diagnostic Constants
+ * Phase 1-4: 카메라 진단, 분류, 캘리브레이션, 선택 시스템
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+
+/**
+ * 진단 타임아웃 (ms)
+ */
+export const DIAGNOSTIC_TIMEOUT_MS = 5000;
+
+/**
+ * 진단 간 대기 시간 (ms)
+ */
+export const DIAGNOSTIC_DELAY_MS = 300;
+
+/**
+ * LocalStorage 키 - 카메라 캘리브레이션
+ */
+export const CALIBRATION_STORAGE_KEY = 'vooster:camera:calibration:v1' as const;
+
+/**
+ * 캘리브레이션 저장소 버전
+ */
+export const CALIBRATION_VERSION = 1;
+
+/**
+ * 캘리브레이션 만료 기간 (ms) - 90일
+ */
+export const CALIBRATION_EXPIRY_MS = 90 * 24 * 60 * 60 * 1000;
+
+/**
+ * 바코드 스캔 최적 해상도 범위
+ */
+export const OPTIMAL_BARCODE_RESOLUTION = {
+  min: { width: 640, height: 480 },
+  ideal: { width: 1280, height: 720 },
+  max: { width: 1920, height: 1080 },
+} as const;
+
+/**
+ * 접사 카메라 감지 기준 (최소 초점 거리, 미터)
+ */
+export const MACRO_CAMERA_MIN_FOCUS_THRESHOLD = 0.05; // 5cm 이하면 접사
+
+/**
+ * 망원 카메라 감지 기준 (줌 배율)
+ */
+export const TELEPHOTO_CAMERA_ZOOM_THRESHOLD = 2.0; // 2배 이상 줌
+
+/**
+ * 초광각 카메라 감지 기준 (시야각, 도)
+ */
+export const ULTRA_WIDE_CAMERA_FOV_THRESHOLD = 90; // 90도 이상
+
+/**
+ * 카메라 타입 감지 패턴
+ */
+export const CAMERA_TYPE_PATTERNS = {
+  wide: /main|wide|primary|표준|메인/i,
+  ultraWide: /ultra.?wide|ultra|초광각/i,
+  telephoto: /tele|zoom|망원/i,
+  macro: /macro|close.?up|접사/i,
+  depth: /depth|tof|깊이/i,
+} as const;
