@@ -1,13 +1,3 @@
----
-title: "바코드 주문 조회 웹앱 PRD"
-description: "제품 요구사항 명세서 - Product Requirements Document"
-category: "project"
-author: "신우진"
-date: "2025-10-18"
-public: false
-order: 1
----
-
 # 바코드 주문 조회 웹앱 PRD
 
 ## 1. 제품 개요
@@ -43,7 +33,8 @@ order: 1
 | F-01 | 바코드 스캔 | 기기 카메라로 1D/2D 바코드 인식 후 주문번호 추출 |
 | F-02 | 주문 상세 조회 | REST API 호출로 주문명, 수량, 옵션, 상태, 썸네일 URL 수신 |
 | F-03 | 썸네일 그리드 | 주문에 포함된 썸네일 전체를 그리드로 표시 |
-| F-04 | 이미지 슬라이드 뷰어 | 썸네일 클릭 시 좌우 스와이프 확대 보기 |
+| F-05 | 최근 스캔 내역(20건) | 로컬 저장소에 기록, 탭 한 번으로 재조회 |
+| F-06 | 세컨드 모니터 제작의뢰서 표시 | 바코드 스캔 시 세컨드 모니터(또는 외부 디스플레이)에 해당 주문의 제작의뢰서 자동 표시 (Window Management API 또는 Puppeteer 활용) |
 | F-05 | 최근 스캔 내역(20건) | 로컬 저장소에 기록, 탭 한 번으로 재조회 |
 | F-06 | 다크 모드 | 현장 조도에 맞춰 자동/수동 전환 |
 
@@ -60,10 +51,11 @@ order: 1
 3. 주문번호 추출 → REST API 호출
 4. 주문 상세·썸네일 그리드 표시(≤3초)
 5. 썸네일 선택 → 슬라이드 뷰어 확인
-6. ‘뒤로’ → 최근 스캔 내역에 기록 → 다음 주문 스캔 반복
+6. '뒤로' → 최근 스캔 내역에 기록 → 다음 주문 스캔 반복
 
 ## 8. 기술 요구사항
-* 플랫폼: 반응형 웹 (Next.js 15 기반, PWA 지원)
+* API: 사내 주문관리 REST API (GET /orders/{orderNo})
+* 세컨드 모니터 제어: Window Management API(웹), Puppeteer + CDP(Node.js) 지원
 * API: 사내 주문관리 REST API (GET /orders/{orderNo})
 * 바코드 라이브러리: zxing-js/browser 또는 Dynamsoft Web SDK
 * 이미지 뷰어: Swiper.js + Lazy Loading
@@ -73,7 +65,7 @@ order: 1
 ## 9. 비기능 요구사항
 | 항목 | 목표 |
 |---|---|
-| 성능 | 스캔→표시 ≤3초, Lighthouse Performance ≥90 |
+| 보안 | HTTPS, 최소 권한 카메라 권한, API 토큰 인증, 세컨드 모니터 접근 권한 관리 |
 | 가용성 | 99% 이상 (PWA 오프라인 fallback) |
 | 보안 | HTTPS, 최소 권한 카메라 권한, API 토큰 인증 |
 | 접근성 | WCAG 2.1 AA, 키보드 조작 지원 |

@@ -66,7 +66,7 @@ export function MonitorController({
     });
   };
 
-  // Socket.IO 연결 초기화
+  // Socket.IO 연결 초기화 (서버 URL/토큰만 변경 시)
   useEffect(() => {
     const socket = createSocketClient({ serverUrl, token });
     socketRef.current = socket;
@@ -97,28 +97,6 @@ export function MonitorController({
           pairingStatus: 'waiting',
           errorMessage: null,
         });
-
-        // QR 코드 그리기
-        if (qrCanvasRef.current) {
-          const qrSize =
-            settings.qrCodeSize === 'small'
-              ? QR_SIZES.small
-              : settings.qrCodeSize === 'large'
-                ? QR_SIZES.large
-                : QR_SIZES.medium;
-
-          try {
-            await generatePairingQR(
-              qrCanvasRef.current,
-              data.sessionId,
-              data.pairingToken,
-              appBaseUrl
-            );
-          } catch (error) {
-            console.error('QR 코드 생성 실패:', error);
-            updateState({ errorMessage: 'QR 코드 생성 실패' });
-          }
-        }
       },
       'session:paired': (data) => {
         console.log('세션 페어링됨:', data.sessionId);
@@ -152,39 +130,6 @@ export function MonitorController({
         }
 
         updateState({ lastOrderNo: data.orderNo });
-
-        // URL 템플릿 처리 (ORDER_FORM_URL_TEMPLATE 환경변수 지원)
-        let workOrderUrl = `${appBaseUrl}/orders/job-order-report/${data.orderNo}`;
-
-        if (orderFormUrlTemplate) {
-          workOrderUrl = orderFormUrlTemplate.replace('{orderNo}', data.orderNo);
-        }
-
-        console.log('제작의뢰서 URL:', workOrderUrl);
-
-        // 팝업 열기
-        const popup = openOrFocusPopup(
-          workOrderUrl,
-          {
-            features:
-              'width=1024,height=768,left=0,top=0,scrollbars=yes,resizable=yes,noopener,noreferrer',
-            name: 'workorder',
-            width: 1024,
-            height: 768,
-          },
-          popupRef.current || undefined
-        );
-
-        if (popup) {
-          popupRef.current = popup;
-          updateState({ popupWindow: popup });
-        } else {
-          updateState({
-            errorMessage:
-              '팝업 차단됨. 브라우저 설정을 확인해주세요.',
-          });
-        }
-
         onNavigate?.(data.orderNo);
       },
     });
@@ -199,8 +144,71 @@ export function MonitorController({
       });
     }
 
-    return cleanup;
-  }, [serverUrl, token, appBaseUrl, orderFormUrlTemplate, onNavigate, settings.qrCodeSize]);
+    return () => {
+      cleanup();
+      socket.disconnect(); // ✅ cleanup에서 disconnect 추가
+    };
+  }, [serverUrl, token]); // ✅ 의존성 최소화
+
+  // QR 코드 생성 (세션 또는 설정 변경 시)
+  useEffect(() => {
+    if (!state.sessionId || !state.pairingToken || !qrCanvasRef.current) {
+      return;
+    }
+
+    const qrSize =
+      settings.qrCodeSize === 'small'
+        ? QR_SIZES.small
+        : settings.qrCodeSize === 'large'
+          ? QR_SIZES.large
+          : QR_SIZES.medium;
+
+    generatePairingQR(
+      qrCanvasRef.current,
+      state.sessionId,
+      state.pairingToken,
+      appBaseUrl
+    ).catch((error) => {
+      console.error('QR 코드 생성 실패:', error);
+      updateState({ errorMessage: 'QR 코드 생성 실패' });
+    });
+  }, [state.sessionId, state.pairingToken, settings.qrCodeSize, appBaseUrl]);
+
+  // URL 템플릿 처리 및 팝업 열기 (주문 번호 변경 시)
+  useEffect(() => {
+    if (!state.lastOrderNo) {
+      return;
+    }
+
+    let workOrderUrl = `${appBaseUrl}/orders/job-order-report/${state.lastOrderNo}`;
+
+    if (orderFormUrlTemplate) {
+      workOrderUrl = orderFormUrlTemplate.replace('{orderNo}', state.lastOrderNo);
+    }
+
+    console.log('제작의뢰서 URL:', workOrderUrl);
+
+    const popup = openOrFocusPopup(
+      workOrderUrl,
+      {
+        features:
+          'width=1024,height=768,left=0,top=0,scrollbars=yes,resizable=yes,noopener,noreferrer',
+        name: 'workorder',
+        width: 1024,
+        height: 768,
+      },
+      popupRef.current || undefined
+    );
+
+    if (popup) {
+      popupRef.current = popup;
+      updateState({ popupWindow: popup });
+    } else {
+      updateState({
+        errorMessage: '팝업 차단됨. 브라우저 설정을 확인해주세요.',
+      });
+    }
+  }, [state.lastOrderNo, appBaseUrl, orderFormUrlTemplate]);
 
   // 수동 창 열기 핸들러
   const handleOpenWindow = () => {

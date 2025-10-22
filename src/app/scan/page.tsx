@@ -51,8 +51,12 @@ export default function ScanPage() {
   // Hooks
   const { settings, updateSetting } = useScannerSettings();
   const { addToHistory } = useScanHistory();
+
+  // Socket.IO 연결 활성화 여부 (환경변수로 제어)
+  const isSocketEnabled = !!process.env.NEXT_PUBLIC_SOCKET_IO_TOKEN;
+
   const { isConnected: isSocketConnected, sendScanOrder, error: socketError } = useScanOrderSocket({
-    enabled: true,
+    enabled: isSocketEnabled,
   });
 
   // Performance fix: Track pending timers for cleanup (prevent memory leaks)

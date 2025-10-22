@@ -16,7 +16,19 @@ export default function MonitorPage() {
   const orderFormUrlTemplate = process.env.NEXT_PUBLIC_ORDER_FORM_URL_TEMPLATE;
 
   // 토큰 가져오기 (실제 구현에서는 사용자 인증 후 토큰 획득)
-  const token = process.env.NEXT_PUBLIC_SOCKET_IO_TOKEN || 'test-token';
+  const token = process.env.NEXT_PUBLIC_SOCKET_IO_TOKEN;
+
+  if (!token) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8 flex items-center justify-center">
+        <div className="max-w-md text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">설정 오류</h1>
+          <p className="text-gray-700 mb-4">NEXT_PUBLIC_SOCKET_IO_TOKEN 환경변수가 설정되지 않았습니다.</p>
+          <p className="text-sm text-gray-500">.env.local 또는 배포 환경에서 토큰을 설정해주세요.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">

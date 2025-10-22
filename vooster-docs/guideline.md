@@ -1,183 +1,383 @@
----
-title: "Code Guideline for Vooster Project"
-description: "시니어 개발자 가이드라인 - 코딩 스타일 및 Best Practices"
-category: "technical"
-author: "신우진"
-date: "2025-10-18"
-public: false
-order: 2
+# Code Guideline for Vooster Project
+
+## Tech Stack Specific Guidelines
+
+### Next.js 15 (App Router)
+- **ALWAYS use `use client` directive** for all components (default: client-side rendering)
+- **Page props must be awaited**: `params` and `searchParams` are promises in Next.js 15
+  ```typescript
+  // ✅ Correct
+  export default async function Page({ params }: PageProps) {
+    const { id } = await params;
+  }
+  
+  // ❌ Wrong
+  export default function Page({ params }: PageProps) {
+    const { id } = params; // Error: params is a Promise
+  }
+  ```
+- Use **App Router** (`src/app/`) for all routing
+- Protected routes go in `src/app/(protected)/` route group
+
+### TypeScript
+- **Strict type safety**: Enable all strict mode flags
+- Use `type` over `interface` for consistency (except when extending)
+- Prefer `unknown` over `any`
+- Use Zod schemas for runtime validation + type inference
+
+### Styling (TailwindCSS 4)
+- **Utility-first approach**: Use Tailwind classes directly
+- Use `cn()` utility for conditional classes:
+  ```typescript
+  import { cn } from '@/lib/utils';
+  
+  <div className={cn(
+    'base-class',
+    condition && 'conditional-class',
+    variants[variant]
+  )} />
+  ```
+- **No inline styles** unless absolutely necessary
+- Follow shadcn/ui component patterns for consistency
+
+## Library Usage Guidelines
+
+| Library | Purpose | Usage Pattern |
+|---------|---------|---------------|
+| `date-fns` | Date/time manipulation | Import specific functions, avoid moment.js patterns |
+| `ts-pattern` | Type-safe branching | Replace complex if/else and switch statements |
+| `@tanstack/react-query` | Server state | All API calls go through React Query hooks |
+| `zustand` | Client state | Use for UI state, NOT server state |
+| `react-use` | Common hooks | Check before writing custom hooks |
+| `es-toolkit` | Utilities | Preferred over lodash |
+| `lucide-react` | Icons | Always import specific icons |
+| `zod` | Validation | Define schemas in `backend/schema.ts` |
+| `shadcn/ui` | UI components | Install via `npx shadcn@latest add [component]` |
+| `supabase` | Backend | Use provided client utilities |
+| `react-hook-form` | Forms | Always combine with Zod resolver |
+
+## Directory Structure & File Organization
+
+### Feature-Based Architecture
+```
+src/features/[featureName]/
+├── backend/              # Server-side logic
+│   ├── route.ts         # Hono API routes
+│   ├── schema.ts        # Zod validation schemas
+│   ├── service.ts       # Business logic
+│   └── error.ts         # Feature-specific errors
+├── components/          # Feature UI components (use client)
+├── hooks/              # React Query hooks & custom hooks
+├── lib/                # DTOs, utilities
+│   └── dto.ts          # Data transformation functions
+├── types.ts            # TypeScript types
+└── constants.ts        # Feature constants
+```
+
+### Naming Conventions
+- **Routes**: `route.ts` (not `api.ts` or `routes.ts`)
+- **Components**: PascalCase files matching export (`UserCard.tsx` exports `UserCard`)
+- **Hooks**: `use` prefix (`useOrderQuery.ts`)
+- **Utils**: `kebab-case.ts` for multi-word utilities
+
+## Backend Architecture (Hono.js)
+
+### Route Pattern
+```typescript
+// features/orders/backend/route.ts
+import type { Hono } from 'hono';
+import { respond, success, failure } from '@/backend/http/response';
+import { getSupabase, getLogger, type AppEnv } from '@/backend/hono/context';
+import { OrderParamsSchema } from './schema';
+import { getOrderById } from './service';
+
+export const registerOrderRoutes = (app: Hono<AppEnv>) => {
+  app.get('/orders/:id', async (c) => {
+    // 1. Validate input
+    const parsed = OrderParamsSchema.safeParse({ id: c.req.param('id') });
+    if (!parsed.success) {
+      return respond(c, failure(400, 'INVALID_PARAMS', 'Invalid order ID', parsed.error));
+    }
+
+    // 2. Get dependencies from context
+    const supabase = getSupabase(c);
+    const logger = getLogger(c);
+
+    // 3. Call service layer
+    const result = await getOrderById(supabase, parsed.data.id);
+
+    // 4. Handle errors
+    if (!result.ok) {
+      logger.error('Failed to fetch order', result.error);
+      return respond(c, result);
+    }
+
+    // 5. Return success
+    return respond(c, result);
+  });
+};
+```
+
+### Service Layer Pattern
+```typescript
+// features/orders/backend/service.ts
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { success, failure, type Result } from '@/backend/http/response';
+
+export async function getOrderById(
+  supabase: SupabaseClient,
+  id: string
+): Promise<Result<Order, OrderError>> {
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    return failure(500, 'DB_ERROR', 'Failed to fetch order', error);
+  }
+
+  if (!data) {
+    return failure(404, 'NOT_FOUND', 'Order not found');
+  }
+
+  return success(data);
+}
+```
+
+## Frontend Patterns
+
+### Component Structure
+```typescript
+'use client';
+
+import { useState } from 'react';
+import type { ComponentProps } from 'react';
+import { Button } from '@/components/ui/button';
+import { useOrderQuery } from '../hooks/useOrderQuery';
+
+interface OrderCardProps {
+  orderId: string;
+  onSelect?: (id: string) => void;
+}
+
+export const OrderCard = ({ orderId, onSelect }: OrderCardProps) => {
+  const query = useOrderQuery(orderId);
+
+  // Early return for loading/error states
+  if (query.isPending) return <LoadingSpinner />;
+  if (query.isError) return <ErrorMessage error={query.error} />;
+
+  const order = query.data;
+
+  return (
+    <article className="rounded-lg border p-4">
+      <h3>{order.name}</h3>
+      <Button onClick={() => onSelect?.(orderId)}>Select</Button>
+    </article>
+  );
+};
+```
+
+### React Query Hook Pattern
+```typescript
+// features/orders/hooks/useOrderQuery.ts
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/lib/remote/api-client';
+import { orderKeys } from '../constants';
+import type { Order } from '../types';
+
+export const useOrderQuery = (orderId: string) => {
+  return useQuery({
+    queryKey: orderKeys.detail(orderId),
+    queryFn: async () => {
+      const response = await apiClient.get<Order>(`/api/orders/${orderId}`);
+      return response.data;
+    },
+    enabled: !!orderId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+// constants.ts
+export const orderKeys = {
+  all: ['orders'] as const,
+  lists: () => [...orderKeys.all, 'list'] as const,
+  list: (filters: string) => [...orderKeys.lists(), filters] as const,
+  details: () => [...orderKeys.all, 'detail'] as const,
+  detail: (id: string) => [...orderKeys.details(), id] as const,
+};
+```
+
+## Code Style Best Practices
+
+### 1. Early Returns Over Nested Conditions
+```typescript
+// ✅ Good
+function processOrder(order: Order) {
+  if (!order.isValid) return null;
+  if (!order.isPaid) return null;
+  
+  return shipOrder(order);
+}
+
+// ❌ Bad
+function processOrder(order: Order) {
+  if (order.isValid) {
+    if (order.isPaid) {
+      return shipOrder(order);
+    }
+  }
+  return null;
+}
+```
+
+### 2. Conditional Classes Over Ternaries
+```typescript
+// ✅ Good
+<div className={cn(
+  'base-class',
+  isActive && 'active-class',
+  variant === 'primary' && 'primary-class'
+)} />
+
+// ❌ Bad
+<div className={`base-class ${isActive ? 'active-class' : ''} ${variant === 'primary' ? 'primary-class' : ''}`} />
+```
+
+### 3. Descriptive Names
+```typescript
+// ✅ Good
+const isUserAuthenticated = checkAuthStatus();
+const fetchUserOrders = async (userId: string) => { ... };
+
+// ❌ Bad
+const flag = checkAuthStatus();
+const getData = async (id: string) => { ... };
+```
+
+### 4. Use Constants Over Magic Values
+```typescript
+// ✅ Good
+const MAX_RETRY_ATTEMPTS = 3;
+const API_TIMEOUT_MS = 5000;
+
+if (retryCount > MAX_RETRY_ATTEMPTS) { ... }
+
+// ❌ Bad
+if (retryCount > 3) { ... }
+```
+
+### 5. Functional & Immutable
+```typescript
+// ✅ Good
+const activeOrders = orders.filter(order => order.status === 'active');
+const orderIds = orders.map(order => order.id);
+
+// ❌ Bad
+const activeOrders = [];
+for (let order of orders) {
+  if (order.status === 'active') {
+    activeOrders.push(order);
+  }
+}
+```
+
+## Error Handling
+
+### Frontend
+```typescript
+// React Query handles errors automatically
+const query = useOrderQuery(orderId);
+
+if (query.isError) {
+  return <ErrorFallback error={query.error} />;
+}
+```
+
+### Backend
+```typescript
+// Always use Result type
+import { success, failure, type Result } from '@/backend/http/response';
+
+async function riskyOperation(): Promise<Result<Data, Error>> {
+  try {
+    const data = await externalAPI();
+    return success(data);
+  } catch (error) {
+    return failure(500, 'API_ERROR', 'External API failed', error);
+  }
+}
+```
+
+## Testing
+
+### Component Tests
+```typescript
+import { render, screen } from '@testing-library/react';
+import { OrderCard } from './OrderCard';
+
+describe('OrderCard', () => {
+  it('should display order name', () => {
+    render(<OrderCard orderId="123" />);
+    expect(screen.getByText('Order #123')).toBeInTheDocument();
+  });
+});
+```
+
+## Package Management
+
+- **Use npm** (not yarn or pnpm)
+- Install shadcn components: `npx shadcn@latest add [component]`
+- Run type checks: `npm run typecheck`
+
+## Database (Supabase)
+
+- **Never run Supabase locally**
+- Migrations go in `/supabase/migrations/`
+- Use migration files for schema changes:
+  ```sql
+  -- supabase/migrations/20250109_create_orders_table.sql
+  CREATE TABLE orders (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+  );
+  ```
+
+## Performance
+
+- Avoid premature optimization
+- Use React Query's built-in caching
+- Lazy load images with Next.js `Image` component
+- Code split with dynamic imports when needed
+
+## Korean Text Handling
+
+- **ALWAYS verify UTF-8 encoding** for Korean text
+- Check for broken characters after code generation
+- Use proper Unicode escaping if needed
+
+## Final Checklist Before Commit
+
+- [ ] All TypeScript errors resolved
+- [ ] No console.logs in production code
+- [ ] Proper error handling in place
+- [ ] Components use `use client` directive
+- [ ] Page params are awaited (Next.js 15)
+- [ ] Korean text renders correctly
+- [ ] Tests pass (`npm test`)
+- [ ] Type check passes (`npm run typecheck`)
+
+## Quick Reference
+
+**Add UI Component**: `npx shadcn@latest add [component]`  
+**Run Tests**: `npm test`  
+**Type Check**: `npm run typecheck`  
+**Dev Server**: `npm run dev`  
+**Build**: `npm run build`  
+
 ---
 
-# Senior Developer Guidelines
-    
-    ## Must
-    
-    - always use client component for all components. (use `use client` directive)
-    - always use promise for page.tsx params props.
-    - use valid picsum.photos stock image for placeholder image
-    
-    ## Library
-    
-    use following libraries for specific functionalities:
-    
-    1. `date-fns`: For efficient date and time handling.
-    2. `ts-pattern`: For clean and type-safe branching logic.
-    3. `@tanstack/react-query`: For server state management.
-    4. `zustand`: For lightweight global state management.
-    5. `react-use`: For commonly needed React hooks.
-    6. `es-toolkit`: For robust utility functions.
-    7. `lucide-react`: For customizable icons.
-    8. `zod`: For schema validation and data integrity.
-    9. `shadcn-ui`: For pre-built accessible UI components.
-    10. `tailwindcss`: For utility-first CSS styling.
-    11. `supabase`: For a backend-as-a-service solution.
-    12. `react-hook-form`: For form validation and state management.
-    
-    ## Directory Structure
-    
-    - src
-    - src/app: Next.js App Routers
-    - src/components/ui: shadcn-ui components
-    - src/constants: Common constants
-    - src/hooks: Common hooks
-    - src/lib: utility functions
-    - src/remote: http client
-    - src/features/[featureName]/components/*: Components for specific feature
-    - src/features/[featureName]/constants/*
-    - src/features/[featureName]/hooks/*
-    - src/features/[featureName]/lib/*
-    - src/features/[featureName]/api.ts: api fetch functions
-    
-    ## Solution Process:
-    
-    1. Rephrase Input: Transform to clear, professional prompt.
-    2. Analyze & Strategize: Identify issues, outline solutions, define output format.
-    3. Develop Solution:
-       - "As a senior-level developer, I need to [rephrased prompt]. To accomplish this, I need to:"
-       - List steps numerically.
-       - "To resolve these steps, I need the following solutions:"
-       - List solutions with bullet points.
-    4. Validate Solution: Review, refine, test against edge cases.
-    5. Evaluate Progress:
-       - If incomplete: Pause, inform user, await input.
-       - If satisfactory: Proceed to final output.
-    6. Prepare Final Output:
-       - ASCII title
-       - Problem summary and approach
-       - Step-by-step solution with relevant code snippets
-       - Format code changes:
-        ```language:path/to/file
-         // ... existing code ...
-         function exampleFunction() {
-             // Modified or new code here
-         }
-         // ... existing code ...
-         ```
-       - Use appropriate formatting
-       - Describe modifications
-       - Conclude with potential improvements
-    
-    ## Key Mindsets:
-    
-    1. Simplicity
-    2. Readability
-    3. Maintainability
-    4. Testability
-    5. Reusability
-    6. Functional Paradigm
-    7. Pragmatism
-    
-    ## Code Guidelines:
-    
-    1. Early Returns
-    2. Conditional Classes over ternary
-    3. Descriptive Names
-    4. Constants > Functions
-    5. DRY
-    6. Functional & Immutable
-    7. Minimal Changes
-    8. Pure Functions
-    9. Composition over inheritance
-    
-    ## Functional Programming:
-    
-    - Avoid Mutation
-    - Use Map, Filter, Reduce
-    - Currying and Partial Application
-    - Immutability
-    
-    ## Code-Style Guidelines
-    
-    - Use TypeScript for type safety.
-    - Follow the coding standards defined in the ESLint configuration.
-    - Ensure all components are responsive and accessible.
-    - Use Tailwind CSS for styling, adhering to the defined color palette.
-    - When generating code, prioritize TypeScript and React best practices.
-    - Ensure that any new components are reusable and follow the existing design patterns.
-    - Minimize the use of AI generated comments, instead use clearly named variables and functions.
-    - Always validate user inputs and handle errors gracefully.
-    - Use the existing components and pages as a reference for the new components and pages.
-    
-    ## Performance:
-    
-    - Avoid Premature Optimization
-    - Profile Before Optimizing
-    - Optimize Judiciously
-    - Document Optimizations
-    
-    ## Comments & Documentation:
-    
-    - Comment function purpose
-    - Use JSDoc for JS
-    - Document "why" not "what"
-    
-    ## Function Ordering:
-    
-    - Higher-order functionality first
-    - Group related functions
-    
-    ## Handling Bugs:
-    
-    - Use TODO: and FIXME: comments
-    
-    ## Error Handling:
-    
-    - Use appropriate techniques
-    - Prefer returning errors over exceptions
-    
-    ## Testing:
-    
-    - Unit tests for core functionality
-    - Consider integration and end-to-end tests
-    
-    ## Next.js
-    
-    - you must use promise for page.tsx params props.
-    
-    ## Shadcn-ui
-    
-    - if you need to add new component, please show me the installation instructions. I'll paste it into terminal.
-    - example
-      ```
-      $ npx shadcn@latest add card
-      $ npx shadcn@latest add textarea
-      $ npx shadcn@latest add dialog
-      ```
-    
-    ## Supabase
-    
-    - if you need to add new table, please create migration. I'll paste it into supabase.
-    - do not run supabase locally
-    - store migration query for `.sql` file. in /supabase/migrations/
-    
-    ## Package Manager
-    
-    - use npm as package manager.
-    
-    ## Korean Text
-    
-    - 코드를 생성한 후에 utf-8 기준으로 깨지는 한글이 있는지 확인해주세요. 만약 있다면 수정해주세요.
-    
-    You are a senior full-stack developer, one of those rare 10x devs. Your focus: clean, maintainable, high-quality code.
-    Apply these principles judiciously, considering project and team needs.
-      
+**Remember**: Write code that is simple, readable, and maintainable. Optimize for future developers (including yourself) who will read this code.
