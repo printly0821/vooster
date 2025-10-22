@@ -1067,7 +1067,1039 @@ log(LogLevel.ERROR, '타임아웃 발생', { duration: 10000 });
 
 ---
 
+---
+
+## 13. 실시간 통신 아키텍처 (Socket.IO 기반)
+
+### 13.1 시스템 개요
+
+Vooster는 스마트폰 웹앱과 세컨드 모니터(대시보드)간의 **양방향 실시간 통신**을 Socket.IO 기반으로 구현했습니다. 이를 통해 바코드 스캔 결과를 즉시 모니터에 반영할 수 있습니다.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                   스마트폰 (스캔 앱)                      │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │  바코드 스캔                                       │  │
+│  │  (카메라 + ZXing)                                │  │
+│  └────────────────┬─────────────────────────────────┘  │
+│                   │ Socket.IO emit('scanOrder')        │
+└───────────────────┼──────────────────────────────────────┘
+                    │
+                    ▼
+         ┌──────────────────────────┐
+         │   Socket.IO 서버         │
+         │  (Node.js + Express)     │
+         │                          │
+         │  - 세션 관리             │
+         │  - 메시지 라우팅         │
+         │  - 실시간 동기화         │
+         │                          │
+         └──────────────┬───────────┘
+                        │
+        ┌───────────────┴──────────────┐
+        │ emit('orderScanned')         │
+        ▼                              ▼
+    ┌────────────┐            ┌──────────────┐
+    │  모니터 1   │            │   모니터 2    │
+    │ (대시보드)  │            │  (대시보드)   │
+    └────────────┘            └──────────────┘
+```
+
+### 13.2 서버 구조 설계
+
+#### A. 기본 설정
+
+```typescript
+// server/src/index.ts
+const io = new SocketIOServer(server, {
+  cors: {
+    origin: config.corsOrigins,
+    credentials: true,
+  },
+  transports: ['websocket', 'polling'],
+  pingInterval: 25000,      // 하트비트 간격
+  pingTimeout: 60000,       // 연결 끊김 판정 시간
+  maxHttpBufferSize: 1e6,   // 1MB 메시지 크기 제한
+});
+```
+
+**각 설정의 의미**:
+- `transports`: WebSocket 우선, 폴백으로 HTTP long-polling
+- `pingInterval/pingTimeout`: 연결 안정성 보장
+- `maxHttpBufferSize`: 대용량 메시지 방지
+
+#### B. 인증 미들웨어
+
+```typescript
+// Socket.IO 연결 시 JWT 검증
+io.use(authMiddleware(config.jwtSecret));
+
+// authMiddleware는 다음을 검증:
+// 1. Authorization 헤더에서 JWT 추출
+// 2. 토큰 서명 검증
+// 3. 토큰 만료 시간 확인
+// 4. socket.data에 사용자 정보 저장
+```
+
+### 13.3 세션 관리 전략
+
+#### A. 세션 생성 (QR 페어링)
+
+```typescript
+// 세컨드 모니터에서 "스캔 준비" 클릭 시 QR 생성
+socket.on('session:create', async (data) => {
+  const session = pairingService.createSession(data.userId);
+  const pairingUrl = pairingService.generatePairingUrl(session);
+
+  // QR 코드 생성 (프론트엔드에서)
+  // 데이터: pairingUrl (또는 sessionId + token)
+
+  socket.emit('sessionCreated', {
+    sessionId: session.sessionId,
+    pairingUrl: pairingUrl,
+    expiresAt: new Date(session.expiresAt).toISOString(),
+  });
+});
+
+// 세션 객체 구조
+interface PairingSession {
+  sessionId: string;           // 8자 고유 ID (0-9A-Z)
+  createdAt: number;          // 생성 시간 (타임스탬프)
+  expiresAt: number;          // 만료 시간 (기본 15분)
+  pairingToken: string;       // JWT (10분 유효)
+  status: 'waiting' | 'paired'; // 상태
+  mobileSocketId?: string;    // 스마트폰 소켓 ID
+  monitorSocketId?: string;   // 모니터 소켓 ID
+  pairedAt?: number;          // 페어링 완료 시간
+}
+```
+
+#### B. QR 스캔 후 페어링
+
+```typescript
+// 스마트폰에서 QR 스캔 후 token + sessionId 전송
+socket.on('session:join', (data: { sessionId: string; token: string }) => {
+  // 1. 토큰 검증
+  const verify = pairingService.verifyPairingToken(data.sessionId, data.token);
+  if (!verify.valid) {
+    socket.emit('error', { code: verify.error });
+    return;
+  }
+
+  // 2. 페어링 완료
+  const success = pairingService.completePairing(
+    data.sessionId,
+    socket.id,  // 스마트폰 소켓 ID 저장
+  );
+
+  if (success) {
+    // 3. 소켓 룸에 추가
+    socket.join(`session:${data.sessionId}`);
+
+    // 4. 양쪽 클라이언트에 알림
+    io.to(`session:${data.sessionId}`).emit('pairingComplete', {
+      sessionId: data.sessionId,
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+```
+
+### 13.4 소켓 룸 기반 메시징
+
+#### A. 소켓 룸 개념
+
+```typescript
+// Socket.IO 룸: 같은 sessionId를 가진 클라이언트들의 그룹
+
+// 룸 추가 (페어링 시)
+socket.join(`session:${sessionId}`);
+
+// 룸으로 메시지 전송
+io.to(`session:${sessionId}`).emit('orderScanned', {
+  orderId: '2024001234',
+  timestamp: new Date().toISOString(),
+});
+
+// 자신을 제외한 룸 전송
+socket.broadcast.to(`session:${sessionId}`).emit('event', data);
+
+// 룸에서 제거
+socket.leave(`session:${sessionId}`);
+```
+
+**룸 구조**:
+- `session:{sessionId}`: 특정 세션의 모든 클라이언트
+- `user:{userId}`: 특정 사용자의 모든 클라이언트
+
+#### B. 실제 메시지 흐름
+
+```
+스마트폰 (Socket A)              모니터 (Socket B)
+      │                                │
+      │──── emit('scanOrder') ────────▶│
+      │      └─ orderId: '2024001234'  │
+      │      └─ barcode: 'ABC123'      │
+      │                                │
+      │  ◀─── emit('orderConfirm') ───│
+      │       └─ status: 'success'     │
+      │       └─ timestamp: ...        │
+      │                                │
+      │  ◀─ emit('showDetails') ──────│
+      │       └─ productName: ...      │
+      │       └─ quantity: 100         │
+      │                                │
+```
+
+### 13.5 인증 및 보안
+
+#### A. JWT 기반 인증
+
+```typescript
+// 페어링 토큰 (QR 스캔용)
+interface SessionPairingPayload {
+  sid: string;        // Session ID
+  sub: string;        // Subject (userId)
+  iat?: number;       // 발급 시간
+  exp?: number;       // 만료 시간
+}
+
+// 토큰 생성
+const pairingToken = sign(
+  { sid: sessionId, sub: userId },
+  config.jwtSecret,
+  { expiresIn: '10m' }  // 10분 유효
+);
+
+// 검증 (연결 시)
+const authMiddleware = (jwtSecret: string) => {
+  return (socket, next) => {
+    const token = socket.handshake.auth.token;
+    try {
+      const payload = verify(token, jwtSecret);
+      socket.data.userId = payload.sub;
+      socket.data.sessionId = payload.sid;
+      next();
+    } catch (error) {
+      next(new Error('Authentication failed'));
+    }
+  };
+};
+```
+
+#### B. 보안 체크리스트
+
+```typescript
+// 1. 토큰 검증
+- sid와 token이 일치하는지 확인
+- 토큰 만료 시간 확인
+- 서명 검증 (JWT_SECRET)
+
+// 2. 세션 권한
+- 자신의 sessionId만 접근 가능
+- 다른 세션의 메시지 거부
+- disconnected 세션 정리
+
+// 3. Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,  // 15분
+  max: 100,                   // 100 요청 제한
+});
+
+// 4. 메시지 검증
+socket.on('scanOrder', (data) => {
+  // 필수 필드 확인
+  if (!data.orderId || !data.barcode) {
+    socket.emit('error', { code: 'INVALID_PAYLOAD' });
+    return;
+  }
+  // 형식 검증 (정규식)
+  if (!/^\d{8,12}$/.test(data.orderId)) {
+    return;
+  }
+});
+```
+
+### 13.6 세션 정리 및 타임아웃
+
+#### A. 타임아웃 설정
+
+```typescript
+// 페어링 세션 (15분)
+interface PairingServiceConfig {
+  sessionTTL: 15 * 60 * 1000,  // 15분 후 자동 만료
+  tokenExpiresIn: '10m',       // JWT 토큰 10분 유효
+}
+
+// 비활성 세션 정리 (30분)
+sessionService.cleanupInactiveSessions(
+  maxIdleTime: 30 * 60 * 1000
+);
+
+// 정기적 정리 (10분마다)
+setInterval(() => {
+  sessionService.cleanupInactiveSessions();
+}, 10 * 60 * 1000);
+```
+
+#### B. 세션 라이프사이클
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ 세션 생성 (Create)                                          │
+│ - sessionId 발급                                            │
+│ - pairingToken (JWT) 생성                                   │
+│ - QR URL 생성                                               │
+│ - 15분 TTL 타이머 시작                                      │
+└────────────┬────────────────────────────────────────────────┘
+             │
+             │ [QR 스캔]
+             ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 페어링 (Pair)                                               │
+│ - 토큰 검증                                                 │
+│ - mobileSocketId, monitorSocketId 연결                      │
+│ - 소켓 룸 생성 (session:{sessionId})                        │
+│ - status 변경: 'waiting' → 'paired'                        │
+└────────────┬────────────────────────────────────────────────┘
+             │
+             │ [실시간 메시지 교환]
+             │ - scanOrder
+             │ - orderConfirm
+             │ - showDetails
+             ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 완료 & 정리 (Release)                                       │
+│ - 소켓 연결 해제                                            │
+│ - 소켓 룸에서 제거                                          │
+│ - 세션 레코드 삭제                                          │
+│ - TTL 타이머 취소                                           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### C. 연결 해제 처리
+
+```typescript
+// 연결 해제 이벤트
+socket.on('disconnect', () => {
+  // 1. 세션에서 소켓 ID 제거
+  const sessionId = pairingService.removeSocketFromSession(socket.id);
+
+  if (!sessionId) return;
+
+  // 2. 상태 확인
+  const session = pairingService.getSession(sessionId);
+  if (!session) return;
+
+  // 3. 양쪽 모두 연결 해제되면 세션 삭제
+  if (!session.mobileSocketId && !session.monitorSocketId) {
+    pairingService.releaseSession(sessionId);
+    logger.info('세션 자동 정리: %s', sessionId);
+  }
+
+  // 4. 상대방에 알림 (선택사항)
+  io.to(`session:${sessionId}`).emit('peerDisconnected', {
+    reason: 'peer_disconnected',
+  });
+});
+```
+
+---
+
+## 14. 세션 페어링 시스템 (QR 코드 기반)
+
+### 14.1 QR 생성 및 스캔 프로세스
+
+#### A. QR 코드 생성
+
+```typescript
+// 1. 모니터에서 QR 생성 요청
+const handleCreateSession = async () => {
+  socket.emit('session:create', {
+    userId: 'user-123',
+  });
+};
+
+// 2. 서버에서 QR 데이터 생성
+const pairingUrl = pairingService.generatePairingUrl(session);
+// 결과: https://app.example.com/pair?sid=ABC123XY&t=eyJhbG...
+
+// 3. QR 코드 렌더링 (프론트엔드)
+// qrcode.react 라이브러리 사용
+<QRCode
+  value={pairingUrl}
+  size={256}
+  level="H"           // 높은 오류 정정 레벨
+  includeMargin={true}
+/>
+```
+
+**QR 설정 가이드**:
+- **size**: 256 이상 권장 (산업현장에서 거리가 있을 수 있음)
+- **level**: H (High) 권장 (30% 손상도 복구 가능)
+- **margin**: true (코드 주변 여백 필요)
+
+#### B. QR 스캔 후 페어링
+
+```typescript
+// 1. 스마트폰에서 QR 스캔
+// ZXing이 QR 데이터 추출: "https://app.example.com/pair?sid=ABC123XY&t=eyJhbG..."
+
+// 2. URL 파싱
+const url = new URL(scannedBarcode);
+const sessionId = url.searchParams.get('sid');   // ABC123XY
+const token = url.searchParams.get('t');         // JWT 토큰
+
+// 3. 페어링 요청
+socket.emit('session:join', {
+  sessionId: sessionId,
+  token: token,
+});
+
+// 4. 서버 검증 및 연결
+const verify = pairingService.verifyPairingToken(sessionId, token);
+if (verify.valid) {
+  // 페어링 성공
+  pairingService.completePairing(sessionId, mobileSocketId);
+  socket.emit('pairingSuccess');
+}
+```
+
+### 14.2 세션 식별 및 매칭
+
+#### A. 세션 ID 생성 전략
+
+```typescript
+// 8자 고유 ID (숫자 + 대문자)
+// 예: ABC123XY, 0A9Z1BC5
+
+import { customAlphabet } from 'nanoid';
+
+const generateSessionId = customAlphabet(
+  '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  8  // 8자 길이
+);
+
+// 충돌 확률 계산
+// 36^8 = 2.8 * 10^12 (약 2조)
+// → 매일 1000개 세션 생성해도 충돌 없음
+```
+
+#### B. 매핑 저장소 (in-memory)
+
+```typescript
+// SessionPairingService 내부
+private sessions: Map<string, PairingSession> = new Map();
+
+// 조회 (sessionId 기준)
+getSession(sessionId: string): PairingSession | undefined {
+  const session = this.sessions.get(sessionId);
+
+  // 만료 확인
+  if (Date.now() > session.expiresAt) {
+    this.sessions.delete(sessionId);
+    return undefined;
+  }
+
+  return session;
+}
+
+// 조회 (remoteId 기준) - 원격 태스크 연결용
+getByRemoteId(remoteId: string): MappingRecord | null {
+  // SQLite 매핑 스토어에서 조회
+  const stmt = this.db.prepare(
+    'SELECT * FROM mappings WHERE remoteId = ?'
+  );
+  return stmt.get(remoteId);
+}
+```
+
+#### C. 소켓-세션 매핑
+
+```typescript
+// 역매핑: 소켓 ID → 세션 ID
+private socketToSession: Map<string, string> = new Map();
+
+// 등록
+registerMobileSocket(sessionId: string, socketId: string): boolean {
+  const session = this.getSession(sessionId);
+  if (!session) return false;
+
+  session.mobileSocketId = socketId;
+  this.socketToSession.set(socketId, sessionId);
+  return true;
+}
+
+// 조회
+getSessionIdBySocketId(socketId: string): string | undefined {
+  return this.socketToSession.get(socketId);
+}
+
+// 제거
+removeSocket(socketId: string): void {
+  const sessionId = this.socketToSession.get(socketId);
+  if (sessionId) {
+    const session = this.sessions.get(sessionId);
+    if (session) {
+      if (session.mobileSocketId === socketId) {
+        session.mobileSocketId = undefined;
+      }
+      if (session.monitorSocketId === socketId) {
+        session.monitorSocketId = undefined;
+      }
+      // 양쪽 모두 연결 해제되면 삭제
+      if (!session.mobileSocketId && !session.monitorSocketId) {
+        this.sessions.delete(sessionId);
+      }
+    }
+    this.socketToSession.delete(socketId);
+  }
+}
+```
+
+### 14.3 타임아웃 및 정리 메커니즘
+
+#### A. 자동 만료
+
+```typescript
+// 세션 생성 시
+const expiresAt = now + this.config.sessionTTL;  // 15분
+
+// 자동 만료 타이머
+setTimeout(() => {
+  if (this.sessions.has(sessionId)) {
+    const sess = this.sessions.get(sessionId)!;
+
+    // paired 상태가 아니면 삭제
+    if (sess.status !== 'paired') {
+      this.sessions.delete(sessionId);
+      logger.info('세션 자동 만료: %s', sessionId);
+    }
+  }
+}, this.config.sessionTTL);  // 15분 후 실행
+```
+
+**문제점 해결**:
+- `setTimeout` 저장하지 않으면 나중에 취소 불가
+- 대량의 세션에서 메모리 누수 위험
+- → 프로덕션 환경에서는 Redis로 관리 권장
+
+#### B. 모니터링 API
+
+```typescript
+// 활성 세션 조회
+app.get('/api/sessions/active', (req, res) => {
+  const sessions = pairingService.getAllActiveSessions();
+
+  res.json({
+    total: sessions.length,
+    paired: sessions.filter(s => s.status === 'paired').length,
+    waiting: sessions.filter(s => s.status === 'waiting').length,
+    sessions: sessions.map(s => ({
+      sessionId: s.sessionId,
+      status: s.status,
+      hasMobile: !!s.mobileSocketId,
+      hasMonitor: !!s.monitorSocketId,
+      createdAt: new Date(s.createdAt).toISOString(),
+      expiresAt: new Date(s.expiresAt).toISOString(),
+    })),
+  });
+});
+
+// 헬스 체크
+app.get('/health', (req, res) => {
+  const uptime = process.uptime();
+  const sessions = sessionService.getAllSessions();
+
+  res.json({
+    status: 'ok',
+    uptime,
+    sessions: {
+      total: sessions.length,
+      active: sessions.filter(s => s.mobileSocketId || s.monitorSocketId).length,
+    },
+  });
+});
+```
+
+---
+
+## 15. 동기화 엔진 아키텍처
+
+### 15.1 양방향 실시간 동기화 개요
+
+#### A. 동기화 방향
+
+```
+┌───────────────────────────────────────┐
+│        로컬 파일 시스템                 │
+│  (워치 디렉터리: .vooster/tasks)       │
+└──────────┬────────────────────────────┘
+           │
+           │ chokidar (파일 워처)
+           │ add/change/unlink 감지
+           ▼
+┌───────────────────────────────────────┐
+│        SyncEngine                      │
+│  - 파일 변경 처리                      │
+│  - 충돌 해결                           │
+│  - API 호출                            │
+└──────────┬────────────────────────────┘
+           │
+           │ (로컬 → 원격)
+           │ create/update/delete
+           ▼
+┌───────────────────────────────────────┐
+│    Vooster API (원격)                 │
+│  /tasks (CRUD 엔드포인트)             │
+└──────────┬────────────────────────────┘
+           │
+           │ polling (매 30초)
+           │ listUpdatedSince()
+           ▼
+┌───────────────────────────────────────┐
+│   원격 변경 감지 & 로컬 동기화          │
+│   (원격 → 로컬)                       │
+└───────────────────────────────────────┘
+```
+
+#### B. 동기화 흐름
+
+```typescript
+// 파일 변경 감지 → 큐 추가 → 처리
+
+// 1. 파일 변경 감지
+this.watcher = chokidar.watch(watchDir, {
+  ignoreInitial: true,
+  awaitWriteFinish: {
+    stabilityThreshold: 300,  // 300ms 동안 변경 없으면 처리
+    pollInterval: 100,
+  },
+});
+
+// 2. 이벤트 핸들러
+this.watcher.on('add', (filePath) =>
+  this.enqueue('create', filePath)
+);
+this.watcher.on('change', (filePath) =>
+  this.enqueue('update', filePath)
+);
+this.watcher.on('unlink', (filePath) =>
+  this.enqueue('delete', filePath)
+);
+
+// 3. 큐에 추가
+private enqueue(kind: 'create' | 'update' | 'delete', filePath: string) {
+  const event: FileChangeEvent = {
+    kind,
+    path: filePath,
+    timestamp: new Date().toISOString(),
+  };
+
+  // p-queue를 사용한 동시성 제어 (기본 5개)
+  this.queue.add(() => this.processLocalChange(event));
+}
+
+// 4. 처리 (로컬 → 원격)
+private async processLocalChange(event: FileChangeEvent) {
+  // 파일 파싱
+  const task = await parseTaskFile(event.path);
+
+  // 매핑 스토어에서 기존 매핑 조회
+  const mapping = this.store.get(task.id);
+
+  // 원격 태스크 조회
+  const remoteTask = mapping?.remoteId
+    ? await this.api.getTask(mapping.remoteId)
+    : await this.api.findByExternalId(task.id);
+
+  if (!remoteTask) {
+    // 새로운 태스크 생성
+    return await this.createRemoteTask(task, event.path);
+  }
+
+  // 기존 태스크 업데이트 (충돌 해결 포함)
+  return await this.updateRemoteTask(task, remoteTask, event.path);
+}
+```
+
+### 15.2 SQLite 매핑 스토어
+
+#### A. 스키마
+
+```sql
+CREATE TABLE IF NOT EXISTS mappings (
+  -- 기본 키
+  localId TEXT PRIMARY KEY,          -- 로컬 파일 ID (파일명)
+  filePath TEXT NOT NULL UNIQUE,     -- 파일 경로
+  remoteId TEXT,                     -- 원격 태스크 ID
+
+  -- 버전 관리
+  etag TEXT,                         -- HTTP ETag (낙관적 잠금)
+  remoteVersion INTEGER,             -- 원격 버전 번호
+
+  -- 시간 추적
+  lastSyncedAt TEXT NOT NULL,        -- 마지막 동기화 시간
+  lastLocalUpdatedAt TEXT NOT NULL,  -- 로컬 마지막 수정 시간
+  lastRemoteUpdatedAt TEXT,          -- 원격 마지막 수정 시간
+
+  -- 메타데이터
+  deletionPolicy TEXT NOT NULL DEFAULT 'archive',  -- archive|delete|ignore
+  createdAt TEXT NOT NULL,           -- 레코드 생성 시간
+  syncCount INTEGER NOT NULL DEFAULT 0,  -- 동기화 횟수
+
+  -- 인덱스
+  CREATE INDEX idx_remoteId ON mappings(remoteId);
+  CREATE INDEX idx_filePath ON mappings(filePath);
+  CREATE INDEX idx_lastSyncedAt ON mappings(lastSyncedAt);
+);
+```
+
+#### B. 주요 작업
+
+```typescript
+// 1. 매핑 조회
+get(localId: string): MappingRecord | null {
+  const stmt = this.db.prepare('SELECT * FROM mappings WHERE localId = ?');
+  return stmt.get(localId);
+}
+
+// 2. 매핑 저장
+upsert(record: Partial<MappingRecord>) {
+  const now = new Date().toISOString();
+  const existing = this.get(record.localId);
+
+  if (existing) {
+    // UPDATE: 기존 레코드 갱신
+    const stmt = this.db.prepare(`
+      UPDATE mappings
+      SET filePath = ?, remoteId = ?, etag = ?,
+          lastSyncedAt = ?, lastLocalUpdatedAt = ?,
+          lastRemoteUpdatedAt = ?, syncCount = syncCount + 1
+      WHERE localId = ?
+    `);
+    stmt.run(...params);
+  } else {
+    // INSERT: 새 레코드 생성
+    const stmt = this.db.prepare(`
+      INSERT INTO mappings (
+        localId, filePath, remoteId, etag, lastSyncedAt,
+        lastLocalUpdatedAt, lastRemoteUpdatedAt, createdAt, syncCount
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+    `);
+    stmt.run(...params);
+  }
+}
+
+// 3. 시간 갱신 (로컬 변경 시)
+touchLocal(
+  localId: string,
+  lastLocalUpdatedAt: string,
+  lastRemoteUpdatedAt?: string,
+  etag?: string
+) {
+  const stmt = this.db.prepare(`
+    UPDATE mappings
+    SET lastLocalUpdatedAt = ?, lastRemoteUpdatedAt = ?, etag = ?, lastSyncedAt = ?
+    WHERE localId = ?
+  `);
+  stmt.run(lastLocalUpdatedAt, lastRemoteUpdatedAt, etag, now, localId);
+}
+
+// 4. 폴링 기준점 조회 (마지막 동기화 이후 변경 감지)
+async getMaxRemoteUpdatedAt(): Promise<string | null> {
+  const stmt = this.db.prepare(`
+    SELECT MAX(lastRemoteUpdatedAt) as maxDate
+    FROM mappings
+    WHERE lastRemoteUpdatedAt IS NOT NULL
+  `);
+  const row = stmt.get();
+  return row?.maxDate || null;
+}
+```
+
+**WAL 모드 최적화**:
+```typescript
+this.db.pragma('journal_mode = WAL');  // Write-Ahead Logging
+
+// 장점:
+// - 읽기와 쓰기가 동시에 가능
+// - 충돌 감소
+// - 더 빠른 성능
+// - 멀티 스레드/프로세스 안전
+```
+
+### 15.3 충돌 해결 전략
+
+#### A. 타임스탬프 기반 LWW (Last-Write-Wins)
+
+```typescript
+// 충돌 감지
+const localTime = new Date(localTask.updatedAt).getTime();
+const remoteTime = new Date(remoteTask.updatedAt).getTime();
+const diff = localTime - remoteTime;
+
+// 허용 드리프트 내 동시 변경: 로컬 우선
+if (Math.abs(diff) <= config.clockDriftMs) {  // 기본 5초
+  return 'local';  // 로컬 변경 우선 적용
+}
+
+// 명확한 시간 차이: 최신 우선
+return localTime > remoteTime ? 'local' : 'remote';
+```
+
+**흐름도**:
+```
+두 버전 모두 변경됨?
+├─ Yes: 타임스탬프 비교
+│  ├─ 차이 < 5초: 로컬 우선
+│  ├─ 로컬이 최신: 원격 업데이트
+│  └─ 원격이 최신: 로컬 덮어쓰기
+└─ No: 해당 버전 적용
+```
+
+#### B. 낙관적 잠금 (ETag)
+
+```typescript
+// 1. 원격 태스크 조회 시 ETag 받음
+const remoteTask = await this.api.getTask(taskId);
+// { id, title, ..., etag: "abc123" }
+
+// 2. 업데이트 시 ETag 포함
+const updated = await this.api.updateTask(
+  taskId,
+  newPayload,
+  { ifMatch: remoteTask.etag }  // 조건부 업데이트
+);
+
+// 서버가 ETag 검증:
+// - 일치: 업데이트 성공, 새 ETag 반환
+// - 불일치: 409 Conflict 반환
+// → 다시 조회 후 재시도
+```
+
+#### C. 충돌 로그
+
+```typescript
+const conflictResolver = new ConflictResolver(logger);
+
+const resolution = conflictResolver.resolve({
+  localTask: localTask,
+  remoteTask: remoteTask,
+  clockDriftMs: 5000,
+});
+
+// 결과
+{
+  winner: 'local',           // 승리자
+  reason: 'latest_timestamp', // 이유
+  localTimestamp: 1700000000,
+  remoteTimestamp: 1699999990,
+  driftMs: 10,               // 시간 차이
+}
+
+// 로그 기록
+conflictResolver.logConflict(context, resolution);
+// [WARN] 충돌 해결됨: localId=task-001, winner=local, driftMs=10
+```
+
+### 15.4 파일 감시 및 폴링
+
+#### A. Chokidar 설정
+
+```typescript
+this.watcher = chokidar.watch(watchDir, {
+  ignoreInitial: true,                      // 시작 시 기존 파일 무시
+  awaitWriteFinish: {
+    stabilityThreshold: 300,                // 300ms 동안 변경 없으면 처리
+    pollInterval: 100,                      // 100ms마다 확인
+  },
+  ignored: /(^|[\/\\])\../,                 // .으로 시작하는 파일 무시
+});
+
+// 이벤트 핸들러
+this.watcher.on('add', (filePath) => {
+  this.enqueue('create', filePath);
+});
+
+this.watcher.on('change', (filePath) => {
+  this.enqueue('update', filePath);
+});
+
+this.watcher.on('unlink', (filePath) => {
+  this.enqueue('delete', filePath);
+});
+
+// 에러 처리
+this.watcher.on('error', (error) => {
+  this.logger.error({ error }, '파일 워처 에러');
+});
+```
+
+**설정 주의사항**:
+- `stabilityThreshold`: 너무 작으면 미완성 파일 처리, 너무 크면 지연
+- `ignored`: 로그 파일, 임시 파일 제외 권장
+
+#### B. 폴링 루프 (정기적 동기화)
+
+```typescript
+private startPolling(): void {
+  this.pollInterval = setInterval(
+    async () => {
+      try {
+        // 마지막 동기화 시점 이후 변경 조회
+        const since = await this.store.getMaxRemoteUpdatedAt();
+        const changed = await this.api.listUpdatedSince(since);
+
+        if (changed.length === 0) {
+          return;  // 변경 없음
+        }
+
+        // 원격 변경을 로컬 파일로 적용
+        for (const remoteTask of changed) {
+          try {
+            const mapping = this.store.getByRemoteId(remoteTask.id);
+            const filePath = mapping?.filePath || path.join(
+              this.config.watchDir,
+              pathFromTitle(remoteTask.title)
+            );
+
+            // 파일 쓰기
+            await writeTaskFile(filePath, fromRemotePayload(remoteTask));
+
+            // 매핑 업데이트
+            this.store.linkOrUpdate(remoteTask, filePath);
+          } catch (error) {
+            this.logger.error({ remoteId: remoteTask.id, error }, '동기화 실패');
+          }
+        }
+      } catch (error) {
+        this.logger.error({ error }, '폴링 동기화 실패');
+      }
+    },
+    this.config.pollIntervalMs  // 기본 30초
+  );
+}
+```
+
+**폴링 설계 고려사항**:
+- **간격 설정**: 30-60초 권장 (API 부하 vs 지연 균형)
+- **동시성**: 파일 워처와 폴링이 동시에 실행 가능
+- **순서 보장**: 파일 워처가 우선, 폴링은 백업
+- **API 호출**: 변경 없을 때도 호출 (가볍게 최적화)
+
+### 15.5 트러블슈팅 및 Best Practices
+
+#### A. 흔한 문제와 해결
+
+**문제 1: 파일이 동기화되지 않음**
+
+```typescript
+// 체크리스트:
+1. 파일 포맷 확인 (.json 또는 .md)
+   └─ parseTaskFile이 지원하는 형식인가?
+
+2. 감시 디렉터리 확인
+   └─ SYNC_WATCH_DIR이 올바른 경로인가?
+
+3. 스키마 검증
+   └─ 필수 필드가 있는가? (id, title, updatedAt)
+
+4. 로그 확인
+   └─ LOG_LEVEL=debug로 상세 로그 확인
+
+// 디버깅 예시
+console.log('파일 감시 중:', {
+  watchDir: resolveAbsolutePath(config.watchDir),
+  watcherActive: !!this.watcher,
+  queueSize: this.queue.size,
+  pendingOperations: this.queue.pending,
+});
+```
+
+**문제 2: 충돌이 계속 발생**
+
+```typescript
+// 원인:
+1. 시스템 시간 동기화 문제
+   └─ NTP 설정 확인
+   └─ `date` 명령으로 시간 확인
+
+2. clockDriftMs 값이 너무 작음
+   └─ SYNC_CLOCK_DRIFT_MS=5000 (기본)
+   └─ SYNC_CLOCK_DRIFT_MS=10000으로 증가
+
+3. 로컬와 원격이 거의 동시에 변경됨
+   └─ 정상 동작 (LWW로 자동 해결)
+```
+
+#### B. 성능 최적화
+
+```typescript
+// 1. 동시성 제어
+this.queue = new PQueue({
+  concurrency: config.concurrency,  // 기본 5
+});
+// 너무 높으면 API 부하, 너무 낮으면 처리 지연
+
+// 2. 배치 처리
+const batch = changed.slice(0, 10);  // 10개씩 처리
+await Promise.all(batch.map(task => this.sync(task)));
+
+// 3. 캐싱
+const mapping = this.mappingCache.get(localId) || this.store.get(localId);
+
+// 4. 폴링 간격 동적 조정
+if (changed.length > 50) {
+  // 변경 많음: 폴링 간격 단축
+  pollIntervalMs = 15000;
+} else if (changed.length === 0) {
+  // 변경 없음: 폴링 간격 연장
+  pollIntervalMs = 60000;
+}
+```
+
+#### C. 모니터링
+
+```typescript
+// 헬스 체크
+const health = engine.getHealth();
+console.log('동기화 엔진 상태:', {
+  healthy: health.healthy,
+  lastSyncAt: health.lastSyncAt,
+  pendingOperations: health.pendingOperations,
+  stats: health.stats,
+});
+
+// 결과
+{
+  healthy: true,
+  lastSyncAt: "2025-01-22T10:30:00.000Z",
+  lastErrorAt: null,
+  pendingOperations: 0,
+  stats: {
+    created: 10,
+    updated: 5,
+    deleted: 2,
+    conflicts: 1,
+    errors: 0,
+    skipped: 0,
+  }
+}
+
+// 커스텀 메트릭
+class SyncMetrics {
+  recordSync(operation: SyncOperation, durationMs: number) {
+    // Prometheus에 푸시
+    syncDuration.observe(durationMs);
+    syncCount.inc({ operation });
+  }
+}
+```
+
+---
+
 **작성자**: 신우진
 **프로젝트**: Vooster
 **버전**: 1.0
-**최종 업데이트**: 2025-10-18
+**최종 업데이트**: 2025-10-22
