@@ -1,0 +1,65 @@
+# 바코드 스캔 기능 구현
+
+**Task ID:** T-005
+**Status:** BACKLOG
+**Importance:** MUST
+**Complexity:** 8/10
+**Urgency:** 10/10
+**Dependencies:** T-004
+
+## Description
+
+### 요구사항
+- 카메라 스트림에서 1D 2D 바코드를 실시간 인식하여 주문번호를 추출한다
+- zxing js browser 우선 적용 필요 시 Dynamsoft Web SDK로 대체 가능한 구조 플래그 구성
+- 스캔 성공 시 즉각 피드백 시각 하이라이트 토스트 진동 제공 중복 스캔 방지 쿨다운
+- 저조도 초점 문제 대응을 위한 torch 토글 지원 가능한 기기에서만 노출
+- 성능 목표 디코드 루프 프레임 분석 250ms 이내 평균 스캔에서 API 호출까지 전환이 매끄럽게 이어지도록 pause resume 제공
+
+### 구현 상세
+- 라이브러리 zxing js browser 설치 후 BrowserMultiFormatContinuousReader 사용 decodeFromVideoDevice로 연속 스캔 구성
+- 비디오 제약은 width height ideal 설정과 facingMode environment 및 deviceId exact 선택 옵션 제공
+- 스캔 성공 시 reader.stop으로 일시 중지 후 주문번호 콜백으로 전달 API 요청 완료 후 재개 또는 사용자가 명시 재개
+- torch 지원은 ImageCapture track.getCapabilities().torch 확인하여 UI 토글 제어
+- 중복 제거는 마지막 결과와 타임스탬프 비교하여 일정 시간 내 동일값 무시
+- 시각 피드백은 오버레이 라인 박스 드로잉 또는 단순 하이라이트 레이어 제공 접근성 색 대비 준수
+
+### 의사코드
+```pseudo
+let reader
+let last = { value: null, at: 0 }
+
+async function startScan(deviceId?: string) {
+  reader = new ZXing.BrowserMultiFormatContinuousReader()
+  await reader.decodeFromVideoDevice(deviceId, 'videoEl', result => {
+    if (!result) return
+    const code = result.getText()
+    const now = Date.now()
+    if (code == last.value && now - last.at < 1500) return
+    last = { value: code, at: now }
+    vibrate([15])
+    highlightOverlay(result)
+    pauseScan()
+    onDetected(code)
+  })
+}
+
+function pauseScan() { reader.stop() }
+function resumeScan() { startScan(currentDeviceId) }
+
+function toggleTorch(track) {
+  const caps = track.getCapabilities()
+  if (caps.torch) track.applyConstraints({ advanced: [{ torch: !torchOn }] })
+}
+```
+
+### 테스트 전략
+- 단위 테스트 디바운스 중복제거 쿨다운 로직 시간 기반 시뮬레이션
+- 통합 테스트 카메라 프레임 모킹으로 샘플 바코드 이미지 시퀀스 투입 성공 실패 혼합 케이스 검증
+- E2E Playwright에서 비디오 모킹 및 성공 후 pause resume 흐름 확인 토치 토글 지원 기기 가드 검증
+- 성능 계측 로그로 디코드 평균 시간 캡처 목표 달성 여부 대시보드 출력
+
+---
+
+**Created:** 2025-10-11T01:49:07.937Z
+**Updated:** 2025-10-11T01:49:07.937Z

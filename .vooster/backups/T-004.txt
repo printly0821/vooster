@@ -1,0 +1,70 @@
+# 카메라 권한 및 상태 처리 구현
+
+**Task ID:** T-004
+**Status:** DONE
+**Importance:** MUST
+**Complexity:** 7/10
+**Urgency:** 10/10
+**Dependencies:** T-001
+
+## Description
+
+### 요구사항
+- 웹앱에서 카메라 권한을 요청 및 상태를 관리하며 granted denied prompt unsupported 상태를 모두 처리한다
+- 보안 컨텍스트 https 미충족 시 안내와 대체 행동을 제공한다
+- 다중 기기에서 일관 동작 스마트폰 태블릿 러기드 PDA 데스크톱 지원 및 후면 카메라 기본 선택
+- 브라우저 지원 탐지 및 iOS Safari 권한 플로우 특이점 처리 재요청 불가 시 해결 가이드 표시
+- 권한 에러 디바이스 미탐지 카메라 점유 충돌 등 예외에 대해 명확한 사용자 안내 및 복구 경로 제공
+- 접근성 준수 키보드 포커스 이동 aria live 알림 진동 피드백 제공
+- 장치 목록 변경 플러그 앤 플레이 이벤트 처리 및 사용자 선택 유지
+
+### 구현 상세
+- Next.js 15 App Router 클라이언트 컴포넌트로 MediaDevices Permissions API 기반 상태머신 구현
+- secure context 감지 window.isSecureContext 체크 후 http 환경에서는 안내 배너 노출 및 설치형 PWA 유도
+- navigator.mediaDevices.getUserMedia와 enumerateDevices 사용 후 facingMode environment 우선 또는 이전에 저장한 deviceId 사용
+- Permissions API 지원 시 navigator.permissions.query camera 권한 상태 구독 지원 안되는 브라우저는 getUserMedia 예외 기반 분기
+- 상태관리는 경량 컨텍스트 CameraContext로 권한상태 장치목록 선택 장치 스트림을 제공 SSR 안전가드 typeof navigator 체크
+- 장치 선택 UI와 에러 배너 가이드 텍스트를 현장 용어로 간결화 vibrate 10 30 10 패턴으로 경고 피드백 제공 지원되지 않으면 무시
+- 장치 사용 해제 시 stream track stop 철저 관리 페이지 leave 또는 권한 거부 시 정리
+- 모든 메시지는 aria live polite 토스트와 함께 표시 키보드로 장치 전환 가능하도록 제공
+
+### 의사코드
+```pseudo
+function checkSupport(): boolean {
+  return !!(navigator && navigator.mediaDevices && window.isSecureContext)
+}
+
+async function listCameras(): Promise<Device[]> {
+  const devices = await navigator.mediaDevices.enumerateDevices()
+  return devices.filter(d => d.kind == 'videoinput')
+}
+
+async function requestPermission(preferredId?: string): Promise<MediaStream> {
+  try {
+    const constraints = preferredId
+      ? { video: { deviceId: { exact: preferredId } } }
+      : { video: { facingMode: { ideal: 'environment' } } }
+    const stream = await navigator.mediaDevices.getUserMedia(constraints)
+    return stream
+  } catch (err) {
+    throw mapCameraError(err)
+  }
+}
+
+function initCameraFlow() {
+  if (!checkSupport()) return setState('unsupported')
+  observePermissionIfAvailable(setState)
+  listCameras().then(setDevices)
+}
+```
+
+### 테스트 전략
+- 단위 테스트 권한 상태머신 에러 매핑 스트림 해제 로직을 Vitest로 검증
+- 통합 테스트 MSW 없이 getUserMedia와 enumerateDevices를 jest mock으로 시뮬레이션 denied notAllowedError NotFoundError OverconstrainedError 케이스 포함
+- E2E Playwright 권한 프롬프트 모킹 후 상태 배너 UI 포커스 이동 aria live 알림 검증
+- 실기 리그레션 테스트 안드로이드 크롬 iOS 사파리 iPadOS 사파리 러기드 PDA 크롬 표준 PC 웹캠에서 장치 전환과 재연결 확인 성능 타임투인터랙트 영향 측정
+
+---
+
+**Created:** 2025-10-11T01:49:07.937Z
+**Updated:** 2025-10-11T05:07:16.730Z
