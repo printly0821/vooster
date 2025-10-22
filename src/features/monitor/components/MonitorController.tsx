@@ -18,6 +18,8 @@ import {
   requestWindowPermission,
   registerUserGestureListener,
 } from '../lib/window-manager';
+import { useErrorHandler } from '@/features/error-handling/hooks/useErrorHandler';
+import { setupSocketReconnection } from '@/features/error-handling/lib/socket-reconnection';
 
 interface MonitorControllerProps {
   serverUrl: string;
@@ -40,6 +42,7 @@ export function MonitorController({
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
   const popupRef = useRef<Window | null>(null);
   const seenNoncesRef = useRef<Set<string>>(new Set());
+  const { handleSocketError, handleMonitorNotPaired } = useErrorHandler();
   const [state, setState] = useState<MonitorState>({
     connectionStatus: 'disconnected',
     pairingStatus: 'idle',
@@ -71,6 +74,21 @@ export function MonitorController({
     const socket = createSocketClient({ serverUrl, token });
     socketRef.current = socket;
 
+    // 재연결 설정 (T-008: 지수 백오프)
+    setupSocketReconnection(socket, undefined, {
+      onReconnecting: (attemptNumber, nextDelay) => {
+        console.log(`재연결 시도 ${attemptNumber}... (${nextDelay}ms 후)`);
+        updateState({
+          connectionStatus: 'connecting',
+          errorMessage: `서버 재연결 중... (시도 ${attemptNumber})`,
+        });
+      },
+      onReconnectFailed: () => {
+        handleSocketError('최대 재시도 횟수를 초과했습니다.');
+        updateState({ connectionStatus: 'disconnected' });
+      },
+    });
+
     // 이벤트 리스너 등록
     const cleanup = attachSocketListeners(socket, {
       'connect': () => {
@@ -83,10 +101,7 @@ export function MonitorController({
       },
       'connect_error': (error) => {
         console.error('연결 오류:', error);
-        updateState({
-          connectionStatus: 'disconnected',
-          errorMessage: '서버 연결 실패',
-        });
+        handleSocketError(`서버 연결 실패: ${error.message}`);
       },
       'session:created': async (data) => {
         console.log('세션 생성됨:', data.sessionId);
