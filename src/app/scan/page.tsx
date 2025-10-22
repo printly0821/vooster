@@ -9,6 +9,7 @@ import { SettingsDrawer } from './_components/SettingsDrawer';
 import { HistoryDrawer } from './_components/HistoryDrawer';
 import { useScannerSettings } from './_hooks/useScannerSettings';
 import { useScanHistory } from './_hooks/useScanHistory';
+import { useScanOrderSocket } from './_hooks/useScanOrderSocket';
 import { ViewMode } from './_types/settings';
 import { cn } from '@/lib/utils';
 
@@ -50,6 +51,9 @@ export default function ScanPage() {
   // Hooks
   const { settings, updateSetting } = useScannerSettings();
   const { addToHistory } = useScanHistory();
+  const { isConnected: isSocketConnected, sendScanOrder, error: socketError } = useScanOrderSocket({
+    enabled: true,
+  });
 
   // Performance fix: Track pending timers for cleanup (prevent memory leaks)
   const pendingTimersRef = React.useRef<NodeJS.Timeout[]>([]);
@@ -58,6 +62,7 @@ export default function ScanPage() {
    * 바코드 스캔 감지 핸들러 (단순화)
    * - 형식 검증
    * - 히스토리 추가
+   * - Socket.IO로 서버에 scanOrder 이벤트 전송 (T-007)
    * - 제작의뢰서 화면으로 전환
    */
   const handleBarcodeDetected = useCallback((result: BarcodeResult) => {
@@ -91,6 +96,23 @@ export default function ScanPage() {
       navigator.vibrate(200);
     }
 
+    // T-007: Socket.IO로 세컨드 모니터에 주문 정보 전송
+    if (isSocketConnected) {
+      sendScanOrder(barcode)
+        .then((success) => {
+          if (success) {
+            console.log('✅ 세컨드 모니터로 주문 정보 전송 완료:', barcode);
+          } else {
+            console.warn('⚠️ 세컨드 모니터로 주문 정보 전송 실패:', barcode);
+          }
+        })
+        .catch((err) => {
+          console.error('❌ 주문 정보 전송 중 오류:', err);
+        });
+    } else {
+      console.warn('⚠️ Socket.IO 미연결 상태');
+    }
+
     // 0.3초 후 제작의뢰서 화면으로 전환
     // Performance fix: Track timer for cleanup
     const transitionTimer = setTimeout(() => {
@@ -99,7 +121,7 @@ export default function ScanPage() {
       setScanStatus('idle');
     }, 300);
     pendingTimersRef.current.push(transitionTimer);
-  }, [settings.vibrationEnabled, addToHistory]);
+  }, [settings.vibrationEnabled, addToHistory, isSocketConnected, sendScanOrder]);
 
   /**
    * 스캔 화면으로 복귀
