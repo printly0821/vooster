@@ -11,6 +11,7 @@ import {
   BookOpen,
   Lock,
   FileCode,
+  Zap,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -93,6 +94,100 @@ const DOCS_NAV = [
         slug: 'ia',
         title: 'IA',
         icon: Palette,
+        public: false,
+      },
+    ],
+  },
+  {
+    // 원격 제어 시스템 관련 문서 섹션
+    category: '원격 제어 시스템',
+    icon: Zap,
+    items: [
+      // 개요 및 시작
+      {
+        slug: 'remote-control/index',
+        title: 'TypeScript 설계 INDEX',
+        icon: FileCode,
+        public: false,
+      },
+      {
+        slug: 'remote-control/summary',
+        title: '빠른 요약 (5분)',
+        icon: FileCode,
+        public: false,
+      },
+      {
+        slug: 'remote-control/readme',
+        title: '프로젝트 README',
+        icon: BookOpen,
+        public: false,
+      },
+      {
+        slug: 'remote-control/fullstack-summary',
+        title: '풀스택 전략 요약',
+        icon: Code,
+        public: false,
+      },
+      // 기술 설계
+      {
+        slug: 'remote-control/rpc-comparison',
+        title: 'RPC 솔루션 비교분석',
+        icon: Code,
+        public: false,
+      },
+      {
+        slug: 'remote-control/architecture',
+        title: 'TypeScript 아키텍처',
+        icon: Code,
+        public: false,
+      },
+      {
+        slug: 'remote-control/implementation',
+        title: 'TypeScript 구현 가이드',
+        icon: Code,
+        public: false,
+      },
+      {
+        slug: 'remote-control/distributed-architecture',
+        title: '분산 제어 아키텍처',
+        icon: Code,
+        public: false,
+      },
+      {
+        slug: 'remote-control/distributed-implementation',
+        title: '분산 제어 구현 가이드',
+        icon: Code,
+        public: false,
+      },
+      {
+        slug: 'remote-control/distributed-quick-start',
+        title: '빠른 시작 가이드',
+        icon: Code,
+        public: false,
+      },
+      {
+        slug: 'remote-control/frontend-websocket',
+        title: '프론트엔드 WebSocket',
+        icon: Code,
+        public: false,
+      },
+      // 풀스택 및 배포
+      {
+        slug: 'remote-control/fullstack-design',
+        title: '풀스택 설계',
+        icon: Code,
+        public: false,
+      },
+      {
+        slug: 'remote-control/fullstack-implementation',
+        title: '풀스택 구현 가이드',
+        icon: FileCode,
+        public: false,
+      },
+      {
+        slug: 'remote-control/deployment',
+        title: '배포 및 운영 가이드',
+        icon: Code,
         public: false,
       },
     ],
