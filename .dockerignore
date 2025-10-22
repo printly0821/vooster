@@ -1,0 +1,66 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+.npm
+.yarn
+
+# Build outputs
+.next
+dist
+build
+out
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Testing
+coverage
+.nyc_output
+jest.config.js
+vitest.config.ts
+
+# Documentation
+README.md
+CHANGELOG.md
+docs
+vooster-docs
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+
+# Development
+logs
+tmp
+temp
+.cache
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Other
+.editorconfig
+.eslintrc
+.prettierrc
+tsconfig.json
+webpack.config.js
