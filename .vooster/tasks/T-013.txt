@@ -1,0 +1,99 @@
+# 채널 관리 및 메시지 라우팅
+
+**Task ID:** T-013
+**Status:** BACKLOG
+**Importance:** MUST
+**Complexity:** 5/10
+**Urgency:** 9/10
+**Dependencies:** T-012
+
+## Description
+
+### 요구사항
+- screenId 기반 채널 룸 생성 및 클라이언트 자동 구독 인증 성공 시 해당 screenId 룸에 join
+- 특정 채널로 navigate 이벤트 브로드캐스트 기능 해당 룸의 모든 소켓에 메시지 전송
+- ACK 메시지 수신 및 로깅 클라이언트가 명령 수행 결과를 서버로 전송
+- 채널별 연결 클라이언트 수 추적 및 모니터링 API 제공
+- 메시지 전송 실패 시 재시도 로직 또는 Dead Letter Queue 기록
+
+### 구현 상세
+- 인증 성공 후 socket.join screenId 호출하여 룸 구독 roomId는 screen:orgId:lineId 형식
+- 메시지 브로드캐스트는 io.of /display .to screenId .emit navigate payload 패턴 사용
+- ACK 이벤트 핸들러 등록 socket.on ack data 로 txId result tabId 수신 후 데이터베이스 또는 로그에 기록
+- 채널 상태 API는 GET /api/channels/:screenId 로 해당 룸의 연결 수 반환 displayNs.adapter.rooms.get screenId .size 활용
+- 메시지 전송 실패 룸에 소켓 없으면 는 trigger_logs 테이블에 missed 상태 기록 재시도 큐 또는 알림 트리거
+- idempotency txId 기준 중복 메시지 필터링 최근 100개 txId를 메모리 또는 Redis에 캐시
+
+### 의사코드
+```pseudo
+// src/backend/websocket/channel-manager.ts
+const displayNs = io.of('/display')
+const recentTxIds = new Set<string>()
+
+// 인증 성공 후 호출
+function subscribeToChannel(socket, screenId) {
+  socket.join(screenId)
+  log('channel_joined', socket.data.deviceId, screenId)
+
+  socket.on('ack', (data) => {
+    const { txId, result, tabId, ts } = data
+    log('ack_received', txId, result, socket.data.screenId)
+
+    // DB에 ACK 기록 (선택적)
+    saveAckLog(txId, result, tabId, ts)
+  })
+}
+
+// 외부에서 호출 (트리거 API)
+async function emitToChannel(screenId, eventType, payload) {
+  const { txId } = payload
+
+  // 중복 방지
+  if (recentTxIds.has(txId)) {
+    log('duplicate_tx', txId)
+    return { ok: false, reason: 'duplicate' }
+  }
+
+  recentTxIds.add(txId)
+  if (recentTxIds.size > 100) {
+    // FIFO 방식으로 오래된 것 제거
+    const first = recentTxIds.values().next().value
+    recentTxIds.delete(first)
+  }
+
+  // 메시지 전송
+  const room = displayNs.adapter.rooms.get(screenId)
+  if (!room || room.size === 0) {
+    log('no_clients', screenId, txId)
+    await saveMissedLog(screenId, txId, payload)
+    return { ok: false, reason: 'no_clients' }
+  }
+
+  displayNs.to(screenId).emit(eventType, payload)
+  log('message_sent', screenId, eventType, txId, room.size)
+
+  return { ok: true, txId, clientCount: room.size }
+}
+
+// 채널 상태 조회
+function getChannelStatus(screenId) {
+  const room = displayNs.adapter.rooms.get(screenId)
+  return {
+    screenId,
+    connected: room ? room.size : 0,
+    online: room && room.size > 0,
+  }
+}
+```
+
+### 테스트 전략
+- 단위 테스트 emitToChannel 함수를 모킹된 Socket.IO 인스턴스로 테스트 중복 txId 필터링 검증
+- 통합 테스트 2개 클라이언트 연결 후 각각 다른 screenId 구독 한 채널에만 메시지 전송 시 다른 채널은 수신 안함 확인
+- ACK 테스트 클라이언트가 ack 이벤트 전송 시 서버 로그에 기록되는지 확인
+- 재연결 테스트 동일 deviceId로 2번 연결 시 첫 번째 소켓 disconnect 확인
+- 성능 테스트 1000개 채널에 동시 메시지 브로드캐스트 시 지연시간 측정 목표 P95 200ms
+
+---
+
+**Created:** 2025-10-23T08:10:00.000Z
+**Updated:** 2025-10-23T08:10:00.000Z

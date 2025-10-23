@@ -1,0 +1,105 @@
+# 로컬 개발 환경 및 Docker Compose
+
+**Task ID:** T-018
+**Status:** BACKLOG
+**Importance:** SHOULD
+**Complexity:** 4/10
+**Urgency:** 7/10
+**Dependencies:** T-012, T-014
+
+## Description
+
+### 요구사항
+- 로컬에서 전체 시스템을 한 번에 실행할 수 있는 Docker Compose 환경 구성
+- Next.js 앱 Socket.IO 서버 Redis 선택적 를 컨테이너로 분리하여 실행
+- 개발용 환경변수 .env.local 파일 템플릿 제공 및 민감 정보 .gitignore 등록
+- Hot reload 지원 소스 코드 변경 시 자동 재시작 또는 리빌드
+- 기본 로깅 및 디버깅 환경 설정 콘솔 로그 파일 로그 구조화된 JSON 로그 지원
+- 개발자 친화적 README 작성 빠른 시작 가이드 및 문제 해결 FAQ
+
+### 구현 상세
+- docker-compose.yml 작성 services에 nextjs socketio redis 정의
+- nextjs 서비스 node:20-alpine 이미지 사용 volumes로 소스 마운트 npm run dev 실행
+- socketio 서비스 별도 포트 3001 로 실행 또는 Next.js와 통합 옵션 제공
+- redis 서비스 redis:7-alpine 이미지 persist 볼륨 설정 선택적
+- 환경변수 .env.local.example 파일 생성 DATABASE_URL JWT_SECRET NEXT_PUBLIC_API_URL WS_URL 템플릿 제공
+- Hot reload nodemon 또는 Next.js dev 모드 활용 소스 변경 시 자동 재시작
+- 로깅 winston 또는 pino 라이브러리 사용 구조화된 로그 출력 로그 레벨 환경변수로 제어
+- README.dev.md 작성 docker-compose up 명령 브라우저 확장 로드 방법 트러블슈팅 가이드 포함
+
+### 의사코드
+```pseudo
+# docker-compose.yml
+version: '3.8'
+
+services:
+  nextjs:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data:
+
+# .env.local.example
+DATABASE_URL=postgresql://user:pass@localhost:5432/vooster
+JWT_SECRET=your-secret-key-here
+NEXT_PUBLIC_API_URL=http://localhost:3000
+WS_URL=ws://localhost:3000/display
+NODE_ENV=development
+
+# README.dev.md
+## 빠른 시작
+
+1. 환경변수 설정
+   cp .env.local.example .env.local
+   # .env.local 파일 편집
+
+2. Docker Compose 실행
+   docker-compose up
+
+3. 브라우저 확장 로드
+   - Chrome 열기 → chrome://extensions
+   - 개발자 모드 활성화
+   - "Load unpacked" → extension/dist 폴더 선택
+
+4. 테스트
+   - http://localhost:3000 접속
+   - Options 페이지에서 페어링
+
+## 문제 해결
+
+Q: 포트 3000이 이미 사용 중
+A: docker-compose.yml에서 포트 변경 "3001:3000"
+
+Q: WebSocket 연결 실패
+A: CORS 설정 확인 WS_URL 환경변수 확인
+```
+
+### 테스트 전략
+- 환경 구성 테스트 docker-compose up 실행 후 모든 서비스 정상 시작 확인 헬스체크 엔드포인트 호출
+- Hot reload 테스트 소스 코드 수정 후 자동 재시작 확인 변경사항 즉시 반영 확인
+- 로그 테스트 구조화된 로그가 콘솔 및 파일에 출력되는지 확인 로그 레벨 변경 동작 확인
+- 통합 테스트 Next.js 앱 Socket.IO 서버 브라우저 확장이 모두 연동되어 동작하는지 확인
+- 초기 설정 테스트 신규 개발자가 README 만으로 환경 구성 가능한지 검증
+
+---
+
+**Created:** 2025-10-23T09:00:00.000Z
+**Updated:** 2025-10-23T09:00:00.000Z

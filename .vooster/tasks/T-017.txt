@@ -1,0 +1,197 @@
+# WebSocket 클라이언트 및 원격 탭 제어
+
+**Task ID:** T-017
+**Status:** BACKLOG
+**Importance:** MUST
+**Complexity:** 8/10
+**Urgency:** 10/10
+**Dependencies:** T-012, T-013, T-015, T-016
+
+## Description
+
+### 요구사항
+- Service Worker에서 WebSocket 연결 유지 및 navigate 이벤트 수신 처리
+- 자동 재연결 로직 구현 네트워크 단절 시 지수 백오프로 재시도 최대 10회
+- chrome.tabs API를 통한 원격 탭 생성 및 포커스 새 탭 생성 또는 기존 탭 재사용
+- 중복 방지 dedupe 로직 최근 5분 내 동일 jobNo는 무시하거나 기존 탭 포커스만
+- ACK 메시지 전송 탭 생성 성공 실패 결과를 WebSocket으로 서버에 보고
+- 타임아웃 및 에러 처리 모든 비동기 작업에 타임아웃 설정 및 폴백 로직
+
+### 구현 상세
+- Service Worker에서 WebSocket 연결 관리 전역 변수 ws 및 reconnectAttempts 유지
+- connectWebSocket 함수 chrome.storage에서 wsUrl과 token 로드 후 new WebSocket 생성
+- onopen 핸들러에서 auth 메시지 전송 { type: 'auth', token, deviceId, screenId }
+- onmessage 핸들러에서 메시지 타입별 분기 navigate 이벤트 처리
+- navigate 이벤트 수신 시 { type, txId, screenId, jobNo, url, ts, exp } 파싱 및 검증
+- 중복 체크 최근 처리한 jobNo 목록 recentJobs에서 확인 5분 타임스탬프로 필터링
+- chrome.tabs.query로 기존 탭 검색 url 패턴 매칭으로 동일 주문 탭 찾기
+- 기존 탭 있으면 chrome.tabs.update로 포커스 및 URL 업데이트 없으면 chrome.tabs.create로 새 탭 생성
+- ACK 전송 ws.send로 { type: 'ack', txId, result: 'opened|focused|deduped', tabId, ts } 전송
+- onclose 핸들러 재연결 로직 reconnectAttempts < 10이면 지수 백오프 타임아웃 설정 후 재시도
+- onerror 핸들러 에러 로깅 및 연결 종료 재연결 트리거
+- chrome.runtime.onMessage 리스너로 Options 페이지에서 reconnect get_status 요청 처리
+
+### 의사코드
+```pseudo
+// src/background/service-worker.ts
+let ws: WebSocket | null = null
+let reconnectAttempts = 0
+const recentJobs = new Map<string, number>() // jobNo -> timestamp
+
+async function connectWebSocket() {
+  const config = await chrome.storage.local.get(['wsUrl', 'token', 'screenId', 'deviceId'])
+
+  if (!config.wsUrl || !config.token) {
+    console.error('[WS] 페어링 정보 없음')
+    return
+  }
+
+  ws = new WebSocket(config.wsUrl)
+
+  ws.onopen = () => {
+    console.log('[WS] 연결 성공')
+    reconnectAttempts = 0
+
+    // 인증
+    ws.send(JSON.stringify({
+      type: 'auth',
+      token: config.token,
+      deviceId: config.deviceId,
+      screenId: config.screenId,
+    }))
+  }
+
+  ws.onmessage = async (event) => {
+    const msg = JSON.parse(event.data)
+    console.log('[WS] 메시지 수신:', msg)
+
+    if (msg.type === 'navigate') {
+      await handleNavigate(msg)
+    } else if (msg.type === 'auth_success') {
+      console.log('[WS] 인증 성공')
+      updateBadge('connected')
+    } else if (msg.type === 'auth_failed') {
+      console.error('[WS] 인증 실패:', msg.reason)
+      ws.close()
+    }
+  }
+
+  ws.onclose = () => {
+    console.log('[WS] 연결 종료')
+    updateBadge('disconnected')
+
+    // 재연결
+    if (reconnectAttempts < 10) {
+      reconnectAttempts++
+      const delay = Math.min(1000 * 2 ** reconnectAttempts, 30000)
+      console.log(`[WS] ${delay}ms 후 재연결 (${reconnectAttempts}/10)`)
+      setTimeout(connectWebSocket, delay)
+    } else {
+      console.error('[WS] 재연결 실패 (최대 시도 초과)')
+      chrome.notifications.create({
+        type: 'basic',
+        title: '연결 실패',
+        message: '서버에 연결할 수 없습니다',
+      })
+    }
+  }
+
+  ws.onerror = (err) => {
+    console.error('[WS] 에러:', err)
+  }
+}
+
+async function handleNavigate(msg) {
+  const { txId, jobNo, url, ts, exp } = msg
+
+  // 만료 확인
+  if (Date.now() > exp) {
+    sendAck(txId, 'expired')
+    return
+  }
+
+  // 중복 체크 (5분 이내)
+  const lastSeen = recentJobs.get(jobNo)
+  if (lastSeen && Date.now() - lastSeen < 300000) {
+    console.log('[Navigate] 중복 무시:', jobNo)
+
+    // 기존 탭 포커스
+    const tabs = await chrome.tabs.query({ url: `*://**/orders/${jobNo}` })
+    if (tabs.length > 0) {
+      await chrome.tabs.update(tabs[0].id!, { active: true })
+      sendAck(txId, 'deduped', tabs[0].id)
+    }
+    return
+  }
+
+  // 탭 생성 또는 재사용
+  const tabs = await chrome.tabs.query({ url: '*://**/orders/*' })
+  if (tabs.length > 0) {
+    // 기존 탭 재사용
+    await chrome.tabs.update(tabs[0].id!, { url, active: true })
+    sendAck(txId, 'focused', tabs[0].id)
+  } else {
+    // 새 탭 생성
+    const tab = await chrome.tabs.create({ url, active: true })
+    sendAck(txId, 'opened', tab.id)
+  }
+
+  // 최근 처리 기록
+  recentJobs.set(jobNo, Date.now())
+
+  // 5분 이상 지난 항목 정리
+  for (const [key, time] of recentJobs.entries()) {
+    if (Date.now() - time > 300000) {
+      recentJobs.delete(key)
+    }
+  }
+}
+
+function sendAck(txId, result, tabId?) {
+  const config = await chrome.storage.local.get(['screenId'])
+
+  ws?.send(JSON.stringify({
+    type: 'ack',
+    txId,
+    screenId: config.screenId,
+    result,
+    tabId,
+    ts: Date.now(),
+  }))
+}
+
+function updateBadge(status: 'connected' | 'disconnected' | 'error') {
+  const colors = { connected: '#22c55e', disconnected: '#6b7280', error: '#ef4444' }
+  chrome.action.setBadgeBackgroundColor({ color: colors[status] })
+  chrome.action.setBadgeText({ text: status === 'connected' ? '●' : '○' })
+}
+
+// 시작 및 메시지 핸들러
+chrome.runtime.onStartup.addListener(connectWebSocket)
+chrome.runtime.onInstalled.addListener(connectWebSocket)
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg.type === 'reconnect') {
+    ws?.close()
+    connectWebSocket()
+    sendResponse({ ok: true })
+  } else if (msg.type === 'get_status') {
+    sendResponse({
+      status: ws?.readyState === WebSocket.OPEN ? 'connected' : 'disconnected',
+    })
+  }
+  return true
+})
+```
+
+### 테스트 전략
+- 단위 테스트 handleNavigate 함수를 모킹된 chrome.tabs API로 검증 중복 dedupe 로직 테스트
+- 통합 테스트 실제 Socket.IO 서버에 연결 후 navigate 이벤트 전송하여 탭 생성 확인
+- 재연결 테스트 WebSocket 서버 강제 종료 후 자동 재연결 확인 지수 백오프 타이밍 검증
+- 중복 테스트 동일 jobNo를 5분 내 2번 전송 시 두 번째는 dedupe 처리되는지 확인
+- E2E Playwright로 브라우저 확장 로드 WebSocket 연결 트리거 API 호출 탭 생성 전체 플로우 검증
+
+---
+
+**Created:** 2025-10-23T08:50:00.000Z
+**Updated:** 2025-10-23T08:50:00.000Z

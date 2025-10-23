@@ -1,0 +1,199 @@
+# 스마트폰 디스플레이 선택 및 QR 페어링 UI
+
+**Task ID:** T-020
+**Status:** BACKLOG
+**Importance:** MUST
+**Complexity:** 6/10
+**Urgency:** 9/10
+**Dependencies:** T-014, T-005
+
+## Description
+
+### 요구사항
+- 스마트폰 바코드 스캐너 앱에 디스플레이 관리 기능 추가 설정 메뉴에서 접근
+- 디스플레이 검색 GET /api/displays 호출하여 온라인 디스플레이 목록 표시 라인별 필터링
+- 각 디스플레이 카드 표시 이름 용도 상태 온라인 오프라인 마지막 동기화 시간 포함
+- QR 스캔으로 페어링 기존 바코드 스캐너 재사용하여 PC 확장의 QR 코드 스캔
+- 승인 확인 모달 커팅기A3 디스플레이를 추가하시겠습니까 확인 취소 버튼
+- POST /api/pair/approve 호출하여 페어링 완료 선택한 screenId를 localStorage에 저장
+- 페어링된 디스플레이 표시 현재 연결된 디스플레이 정보 및 연결 끊기 버튼
+
+### 구현 상세
+
+**A. 설정 메뉴 추가**
+- 바코드 스캔 페이지 src/app/scan/page.tsx 우상단에 설정 아이콘 버튼 추가
+- 클릭 시 /settings/displays 페이지로 이동 또는 모달 표시
+
+**B. 디스플레이 목록 페이지**
+- src/app/settings/displays/page.tsx 생성 또는 모달 컴포넌트
+- useEffect로 GET /api/displays 호출 lineId는 사용자 프로필 또는 선택 가능
+- 응답 데이터를 map으로 카드 리스트 렌더링
+- 각 카드 디스플레이 이름 용도 상태 배지 녹색 온라인 회색 오프라인 마지막 동기화 상대 시간
+- 카드 클릭 시 또는 추가 버튼 클릭 시 QR 스캔 모드로 전환
+
+**C. QR 스캔 페어링**
+- 기존 T-005 바코드 스캐너 컴포넌트 재사용
+- 페어링 모드 플래그 설정 isPairingMode true
+- QR 인식 시 payload 파싱 { sessionId, code, wsUrl } 추출
+- 승인 확인 모달 표시 디스플레이 이름과 용도를 다시 보여주며 확인 요청
+- 확인 버튼 클릭 시 POST /api/pair/approve 호출 body { sessionId, code }
+- 응답 { ok: true, token, screenId } 받아서 localStorage에 저장
+- 성공 토스트 표시 후 디스플레이 목록 페이지로 복귀
+
+**D. 현재 페어링 상태 표시**
+- localStorage에서 pairedScreenId 로드하여 상단에 표시
+- 현재 연결: 커팅기A3 커팅라인 형식으로 표시
+- 연결 끊기 버튼 클릭 시 localStorage.removeItem pairedScreenId 후 리로드
+
+**E. 리스트 검색 및 필터**
+- 검색창 제공 디스플레이 이름으로 필터링
+- 라인 선택 드롭다운 전체 커팅라인 코팅라인 등
+- 온라인만 보기 체크박스 offline 디스플레이 숨김
+
+### 의사코드
+```pseudo
+// src/app/settings/displays/page.tsx
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+
+export default function DisplaysPage() {
+  const [displays, setDisplays] = useState([])
+  const [pairedScreenId, setPairedScreenId] = useState(null)
+  const router = useRouter()
+
+  useEffect(() => {
+    // 현재 페어링 상태 로드
+    const paired = localStorage.getItem('pairedScreenId')
+    setPairedScreenId(paired)
+
+    // 디스플레이 목록 조회
+    loadDisplays()
+  }, [])
+
+  async function loadDisplays() {
+    const res = await fetch('/api/displays')
+    const data = await res.json()
+    setDisplays(data.displays)
+  }
+
+  function handleAddDisplay() {
+    // QR 스캔 모드로 전환
+    router.push('/scan?mode=pairing')
+  }
+
+  function handleDisconnect() {
+    if (!confirm('연결을 해제하시겠습니까?')) return
+
+    localStorage.removeItem('pairedScreenId')
+    setPairedScreenId(null)
+  }
+
+  return (
+    <div className="p-4">
+      <h1>디스플레이 관리</h1>
+
+      {/* 현재 페어링 상태 */}
+      {pairedScreenId && (
+        <Card className="mb-4 bg-green-50">
+          <p>현재 연결: {pairedScreenId}</p>
+          <button onClick={handleDisconnect}>연결 끊기</button>
+        </Card>
+      )}
+
+      {/* 디스플레이 목록 */}
+      <div className="space-y-2">
+        {displays.map((display) => (
+          <Card key={display.screenId} className="p-4">
+            <div className="flex justify-between">
+              <div>
+                <h3>{display.name}</h3>
+                <p className="text-sm text-gray-600">{display.purpose}</p>
+              </div>
+              <div>
+                <Badge variant={display.online ? 'success' : 'secondary'}>
+                  {display.online ? '온라인' : '오프라인'}
+                </Badge>
+              </div>
+            </div>
+            <p className="text-xs">마지막 동기화: {formatRelativeTime(display.lastSeen)}</p>
+          </Card>
+        ))}
+      </div>
+
+      {/* 추가 버튼 */}
+      <button onClick={handleAddDisplay} className="mt-4">
+        디스플레이 추가 (QR 스캔)
+      </button>
+    </div>
+  )
+}
+
+// src/app/scan/page.tsx (수정)
+function ScanPage() {
+  const searchParams = useSearchParams()
+  const isPairingMode = searchParams.get('mode') === 'pairing'
+
+  function handleBarcodeDetected(code) {
+    if (isPairingMode) {
+      // QR 페어링 처리
+      handlePairingQR(code)
+    } else {
+      // 일반 바코드 처리
+      handleOrderBarcode(code)
+    }
+  }
+
+  async function handlePairingQR(qrCode) {
+    try {
+      const payload = JSON.parse(qrCode)
+      const { sessionId, code } = payload
+
+      // 승인 확인 모달
+      const confirmed = await showConfirmModal(
+        `${payload.displayName}을(를) 추가하시겠습니까?`
+      )
+
+      if (!confirmed) return
+
+      // 승인 API 호출
+      const res = await fetch('/api/pair/approve', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: JSON.stringify({ sessionId, code }),
+      })
+
+      const { ok, token, screenId } = await res.json()
+
+      if (ok) {
+        // 페어링 정보 저장
+        localStorage.setItem('pairedScreenId', screenId)
+        localStorage.setItem('pairingToken', token)
+
+        showToast('페어링 완료!')
+        router.push('/settings/displays')
+      } else {
+        showToast('페어링 실패. 다시 시도하세요.')
+      }
+    } catch (err) {
+      showToast('유효하지 않은 QR 코드입니다')
+    }
+  }
+}
+```
+
+### 테스트 전략
+- 단위 테스트 QR 페이로드 파싱 및 검증 로직 JSON.parse 예외 처리 확인
+- 디스플레이 목록 테스트 GET /api/displays 호출 후 카드 렌더링 확인 온라인 오프라인 배지 색상 확인
+- 페어링 플로우 테스트 QR 스캔 승인 모달 표시 확인 버튼 클릭 POST /api/pair/approve 호출 확인
+- localStorage 테스트 페어링 완료 후 pairedScreenId 저장 확인 연결 끊기 시 삭제 확인
+- UI 테스트 Playwright로 설정 메뉴 접근 디스플레이 추가 버튼 클릭 QR 스캔 모드 전환 확인
+- E2E 전체 플로우 PC 확장 QR 표시 스마트폰 스캔 승인 저장 검증
+
+---
+
+**Created:** 2025-10-23T09:20:00.000Z
+**Updated:** 2025-10-23T09:20:00.000Z
