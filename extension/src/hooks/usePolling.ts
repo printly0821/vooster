@@ -70,7 +70,9 @@ export function usePolling(options: PollingOptions): void {
     displayName,
     enabled,
     interval = 3000, // 3초
-    maxAttempts = 60, // 3분
+    maxAttempts = (typeof window !== 'undefined' && (window as any).__E2E_TEST__)
+      ? 5  // E2E 테스트 모드: 5회 (15초)
+      : 60, // 프로덕션: 60회 (3분)
     onSuccess,
     onRetry,
     onError,

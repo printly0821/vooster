@@ -77,7 +77,7 @@ export function Dashboard(props: DashboardProps) {
         </div>
 
         {/* 연결 상태 */}
-        <div className="p-4 bg-gray-50 rounded-lg">
+        <div className="p-4 bg-gray-50 rounded-lg" data-status={connectionStatus}>
           <p className="text-sm text-gray-500 mb-1">연결 상태</p>
           <div className="flex items-center gap-2">
             <div
