@@ -53,42 +53,42 @@ export function normalizeLineId(input: string): string {
  * 각 테스트는 (입력, 예상_출력) 형태입니다.
  * 주의: 공백과 특수문자는 제거되므로 테스트 케이스 작성 시 주의 필요
  */
-export const normalizeLineIdTestCases = [
+export const normalizeLineIdTestCases: Array<[string, string]> = [
   // 한글 제거
-  ('생산자-001', '001'),
-  ('생산자A', 'a'),
-  ('제조라인', 'default-line'),
+  ['생산자-001', '001'],
+  ['생산자A', 'a'],
+  ['제조라인', 'default-line'],
 
   // 영문 소문자 변환
-  ('Test_Line', 'test-line'),
-  ('MyDisplay', 'mydisplay'), // 공백 없음
-  ('TEST', 'test'),
+  ['Test_Line', 'test-line'],
+  ['MyDisplay', 'mydisplay'], // 공백 없음
+  ['TEST', 'test'],
 
   // 특수문자 제거
-  ('Line@1', 'line1'),
-  ('Pro#duct', 'product'),
-  ('Item!@#', 'item'),
+  ['Line@1', 'line1'],
+  ['Pro#duct', 'product'],
+  ['Item!@#', 'item'],
 
   // 하이픈/언더스코어 처리
-  ('test-line', 'test-line'),
-  ('test_line', 'test-line'),
-  ('test--line', 'test-line'),
-  ('test__line', 'test-line'),
-  ('-test-line-', 'test-line'),
+  ['test-line', 'test-line'],
+  ['test_line', 'test-line'],
+  ['test--line', 'test-line'],
+  ['test__line', 'test-line'],
+  ['-test-line-', 'test-line'],
 
   // 빈 문자열 및 예외
-  ('', 'default-line'),
-  ('!!!', 'default-line'),
-  ('   ', 'default-line'),
+  ['', 'default-line'],
+  ['!!!', 'default-line'],
+  ['   ', 'default-line'],
 
   // 숫자만
-  ('001', '001'),
-  ('123-456', '123-456'),
+  ['001', '001'],
+  ['123-456', '123-456'],
 
   // 혼합
-  ('Line-01_테스트', 'line-01'),
-  ('ProductionLine1', 'productionline1'), // 공백과 특수문자 제거
-  ('라인_A_01', 'a-01'),
+  ['Line-01_테스트', 'line-01'],
+  ['ProductionLine1', 'productionline1'], // 공백과 특수문자 제거
+  ['라인_A_01', 'a-01'],
 ];
 
 /**

@@ -162,14 +162,14 @@ export function usePairing() {
 
       // 5. QR 코드 생성
       const qrResponse = await createPairingQR({
-        displayId: registerResponse.displayId,
+        displayId: registerResponse.screenId,
         ttl: 180000, // 3분
       });
 
       // 6. QR 표시 상태로 전환
       dispatch({
         type: 'QR_GENERATED',
-        displayId: registerResponse.displayId,
+        displayId: registerResponse.screenId,
         pairingToken: qrResponse.pairingToken,
         expiresAt: qrResponse.expiresAt,
       });
