@@ -118,10 +118,10 @@ export const API_BASE_URL = 'http://localhost:3000';
  * API 엔드포인트 경로
  */
 export const API_ENDPOINTS = {
-  /** 디스플레이 등록: POST /api/display/register */
-  REGISTER_DISPLAY: '/api/display/register',
-  /** 페어링 QR 생성: POST /api/pairing/qr */
-  CREATE_PAIRING_QR: '/api/pairing/qr',
-  /** 페어링 폴링: GET /api/pairing/poll/:displayId */
-  POLL_PAIRING: '/api/pairing/poll',
+  /** 디스플레이 등록: POST /api/displays/register */
+  REGISTER_DISPLAY: '/api/displays/register',
+  /** 페어링 QR 생성: POST /api/pair/qr */
+  CREATE_PAIRING_QR: '/api/pair/qr',
+  /** 페어링 폴링: GET /api/pair/poll/:sessionId */
+  POLL_PAIRING: '/api/pair/poll',
 } as const;
