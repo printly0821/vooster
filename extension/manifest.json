@@ -21,5 +21,8 @@
     "default_title": "Vooster Display",
     "default_popup": "public/popup.html"
   },
-  "options_page": "public/options.html"
+  "options_page": "public/options.html",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
 }
