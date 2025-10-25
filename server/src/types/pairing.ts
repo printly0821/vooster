@@ -67,11 +67,11 @@ export interface PairQRResponse {
   /** QR 코드 데이터 (JSON.stringify({ sessionId, code, wsUrl })) */
   qrData: string;
 
-  /** 세션 만료까지 남은 시간 (초 단위, 기본 300초) */
-  expiresIn: number;
+  /** 토큰 만료 시간 (Unix timestamp 밀리초) */
+  expiresAt: number;
 
-  /** 페어링 확인 코드 (UI에 표시, 수동 입력용) */
-  code: string;
+  /** 페어링 토큰 (UI에 표시, 수동 입력용) */
+  pairingToken: string;
 }
 
 /**

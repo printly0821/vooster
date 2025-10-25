@@ -35,12 +35,12 @@ router.post('/qr', pairingLimiter, async (_req: Request, res: Response) => {
     const response: PairQRResponse = {
       ok: true,
       sessionId: session.sessionId,
-      code: session.code,
+      pairingToken: session.code,
       qrData,
-      expiresIn: 300, // 5분
+      expiresAt: Date.now() + 300 * 1000, // 5분 후 (밀리초)
     };
 
-    logger.info('QR 생성 성공: sessionId=%s, code=%s', session.sessionId, session.code);
+    logger.info('QR 생성 성공: sessionId=%s, pairingToken=%s', session.sessionId, session.code);
 
     return res.json(response);
   } catch (error) {
