@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Vooster Display Launcher",
+  "version": "0.1.0",
+  "description": "바코드 스캔으로 원격 디스플레이를 제어하는 Chrome Extension",
+  "permissions": [
+    "tabs",
+    "storage",
+    "notifications",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://*/*",
+    "wss://*/*"
+  ],
+  "background": {
+    "service_worker": "dist/service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Vooster Display",
+    "default_popup": "public/popup.html"
+  },
+  "options_page": "public/options.html",
+  "icons": {
+    "16": "public/icons/icon-16.png",
+    "48": "public/icons/icon-48.png",
+    "128": "public/icons/icon-128.png"
+  }
+}
