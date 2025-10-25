@@ -18,6 +18,8 @@
     "type": "module"
   },
   "action": {
-    "default_title": "Vooster Display"
-  }
+    "default_title": "Vooster Display",
+    "default_popup": "public/popup.html"
+  },
+  "options_page": "public/options.html"
 }
