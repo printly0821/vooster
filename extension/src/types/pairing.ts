@@ -51,6 +51,7 @@ export interface PairingContext {
 
   /** 서버 응답 데이터 */
   displayId?: string;
+  sessionId?: string;
   pairingToken?: string;
   qrExpiresAt?: number;
 
@@ -75,7 +76,7 @@ export interface PairingContext {
 export type PairingAction =
   | { type: 'START_INPUT'; displayName: string }
   | { type: 'SUBMIT_INFO'; displayName: string; deviceId: string }
-  | { type: 'QR_GENERATED'; displayId: string; pairingToken: string; expiresAt: number }
+  | { type: 'QR_GENERATED'; displayId: string; sessionId: string; pairingToken: string; expiresAt: number }
   | { type: 'QR_EXPIRED' }
   | { type: 'POLL_START' }
   | { type: 'POLL_SUCCESS'; wsServerUrl: string; authToken: string; tokenExpiresAt: number }

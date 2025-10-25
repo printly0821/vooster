@@ -60,6 +60,7 @@ export function App() {
    * 폴링 Hook 설정
    */
   usePolling({
+    sessionId: context.sessionId || '',
     displayId: context.displayId || '',
     displayName: context.displayName || '',
     enabled: context.state === 'displaying' || context.state === 'polling',

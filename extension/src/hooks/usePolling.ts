@@ -14,7 +14,9 @@ import { STORAGE_KEYS } from '../types/storage';
  * 폴링 옵션
  */
 export interface PollingOptions {
-  /** 폴링할 디스플레이 ID */
+  /** 폴링할 세션 ID (QR 생성 시 받은 sessionId) */
+  sessionId: string;
+  /** 디스플레이 ID */
   displayId: string;
   /** 디스플레이 이름 */
   displayName: string;
@@ -43,6 +45,7 @@ export interface PollingOptions {
  *
  * @example
  * usePolling({
+ *   sessionId: 'session-uuid',
  *   displayId: 'display-uuid',
  *   displayName: 'My Display',
  *   enabled: true,
@@ -62,6 +65,7 @@ export interface PollingOptions {
  */
 export function usePolling(options: PollingOptions): void {
   const {
+    sessionId,
     displayId,
     displayName,
     enabled,
@@ -78,8 +82,8 @@ export function usePolling(options: PollingOptions): void {
   const timeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    // 폴링이 비활성화되면 중단
-    if (!enabled || !displayId) {
+    // 폴링이 비활성화되거나 sessionId가 없으면 중단
+    if (!enabled || !sessionId) {
       return;
     }
 
@@ -94,7 +98,7 @@ export function usePolling(options: PollingOptions): void {
         timeoutIdRef.current = null;
       }
     };
-  }, [enabled, displayId]);
+  }, [enabled, sessionId]);
 
   /**
    * 폴링 시작
@@ -112,8 +116,8 @@ export function usePolling(options: PollingOptions): void {
       // 폴링 횟수 증가
       attemptCountRef.current += 1;
 
-      // 서버 폴링
-      const response = await pollPairing(displayId);
+      // 서버 폴링 (sessionId 사용)
+      const response = await pollPairing(sessionId);
 
       // 페어링 완료 확인
       if (response.isPaired && response.wsServerUrl && response.authToken) {

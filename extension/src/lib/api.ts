@@ -166,22 +166,22 @@ export async function createPairingQR(
  * 3초 간격으로 호출하여 페어링 완료 여부를 확인합니다.
  * 페어링이 완료되면 WebSocket URL과 JWT 토큰을 받습니다.
  *
- * @param displayId - 등록된 디스플레이 ID
+ * @param sessionId - 페어링 세션 ID (QR 생성 시 받은 sessionId)
  * @returns 페어링 상태와 인증 정보
  * @throws {ApiError} 폴링 실패 시
  *
  * @example
- * const response = await pollPairing('display-uuid');
+ * const response = await pollPairing('session-uuid');
  * if (response.isPaired) {
  *   console.log(response.wsServerUrl); // 'ws://localhost:3000'
  *   console.log(response.authToken); // 'jwt-token'
  * }
  */
 export async function pollPairing(
-  displayId: string
+  sessionId: string
 ): Promise<PollPairingResponse> {
   return await request<PollPairingResponse>(
-    `${API_ENDPOINTS.POLL_PAIRING}/${displayId}`,
+    `${API_ENDPOINTS.POLL_PAIRING}/${sessionId}`,
     {
       method: 'GET',
     }

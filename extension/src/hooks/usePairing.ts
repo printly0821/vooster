@@ -56,6 +56,7 @@ function pairingReducer(
         ...context,
         state: 'displaying',
         displayId: action.displayId,
+        sessionId: action.sessionId,
         pairingToken: action.pairingToken,
         qrExpiresAt: action.expiresAt,
         error: undefined,
@@ -170,6 +171,7 @@ export function usePairing() {
       dispatch({
         type: 'QR_GENERATED',
         displayId: registerResponse.screenId,
+        sessionId: qrResponse.sessionId,
         pairingToken: qrResponse.pairingToken,
         expiresAt: qrResponse.expiresAt,
       });

@@ -70,6 +70,8 @@ export interface CreatePairingQRRequest {
  * 페어링 토큰을 받아 QR 코드로 렌더링합니다.
  */
 export interface CreatePairingQRResponse {
+  /** 페어링 세션 ID (폴링 시 사용) */
+  sessionId: string;
   /** 페어링 토큰 (짧은 랜덤 문자열, 예: "ABC123") */
   pairingToken: string;
   /** 토큰 만료 시간 (Unix timestamp 밀리초) */
