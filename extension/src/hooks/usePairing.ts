@@ -8,7 +8,7 @@
 import { useReducer } from 'preact/hooks';
 import type { PairingContext, PairingAction, PairingError } from '../types/pairing';
 import { registerDisplay, createPairingQR } from '../lib/api';
-import { getOrCreateDeviceId, getBrowserMetadata } from '../lib/utils';
+import { getOrCreateDeviceId } from '../lib/utils';
 import { ApiError } from '../lib/api';
 
 /**
@@ -150,11 +150,14 @@ export function usePairing() {
       // 3. 정보 제출 상태로 전환
       dispatch({ type: 'SUBMIT_INFO', displayName, deviceId });
 
-      // 4. 디스플레이 등록
+      // 4. 디스플레이 등록 (T-014 서버 스펙)
+      // 기본값이 자동으로 설정됨: purpose='display', orgId='default', lineId=displayName
       const registerResponse = await registerDisplay({
         deviceId,
         name: displayName,
-        metadata: getBrowserMetadata(),
+        purpose: 'display',
+        orgId: 'default',
+        lineId: displayName,
       });
 
       // 5. QR 코드 생성

@@ -8,11 +8,16 @@
 /**
  * 디스플레이 등록 요청 바디
  *
+ * T-014 서버 스펙에 따라 정의된 요청 형식
+ * 디스플레이를 서버에 등록할 때 사용됩니다.
+ *
  * @example
  * const request: RegisterDisplayRequest = {
  *   deviceId: 'uuid-v4-string',
  *   name: 'My Display',
- *   metadata: { browser: 'Chrome', os: 'macOS' }
+ *   purpose: 'display',
+ *   orgId: 'default',
+ *   lineId: 'My Display'
  * };
  */
 export interface RegisterDisplayRequest {
@@ -20,8 +25,12 @@ export interface RegisterDisplayRequest {
   deviceId: string;
   /** 디스플레이 이름 (사용자 입력) */
   name: string;
-  /** 선택적 메타데이터 (브라우저 정보, OS 등) */
-  metadata?: Record<string, unknown>;
+  /** 디스플레이 용도 (기본값: 'display') */
+  purpose: string;
+  /** 조직 ID (기본값: 'default') */
+  orgId: string;
+  /** 라인 ID (기본값: 디스플레이 이름) */
+  lineId: string;
 }
 
 /**

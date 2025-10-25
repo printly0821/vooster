@@ -86,23 +86,38 @@ async function request<T>(
 /**
  * 디스플레이 등록 API
  *
- * 새로운 디스플레이를 서버에 등록하고 displayId를 받습니다.
+ * 새로운 디스플레이를 서버에 등록하고 screenId를 받습니다.
+ * 필수 필드는 deviceId와 name이며, 나머지는 기본값으로 자동 설정됩니다:
+ * - purpose: 'display' (고정값)
+ * - orgId: 'default' (고정값)
+ * - lineId: name (디스플레이 이름 사용)
  *
- * @param requestData - 디스플레이 정보 (deviceId, name, metadata)
- * @returns 서버에서 생성한 displayId
+ * @param data - 디스플레이 정보 (deviceId, name은 필수, 나머지는 자동 설정)
+ * @returns 서버에서 생성한 screenId
  * @throws {ApiError} 등록 실패 시
  *
  * @example
  * const response = await registerDisplay({
  *   deviceId: 'uuid-v4-string',
  *   name: 'My Display',
- *   metadata: { browser: 'Chrome' }
+ *   purpose: 'display',
+ *   orgId: 'default',
+ *   lineId: 'My Display'
  * });
- * console.log(response.displayId); // 'display-uuid'
+ * console.log(response.displayId); // 'screen:default:My Display'
  */
 export async function registerDisplay(
-  requestData: RegisterDisplayRequest
+  data: RegisterDisplayRequest
 ): Promise<RegisterDisplayResponse> {
+  // T-014 서버 스펙에 맞는 요청 형식으로 변환
+  const requestData: RegisterDisplayRequest = {
+    deviceId: data.deviceId,
+    name: data.name,
+    purpose: data.purpose || 'display',
+    orgId: data.orgId || 'default',
+    lineId: data.lineId || data.name,
+  };
+
   return await request<RegisterDisplayResponse>(
     API_ENDPOINTS.REGISTER_DISPLAY,
     {
