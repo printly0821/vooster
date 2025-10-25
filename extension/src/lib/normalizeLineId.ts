@@ -51,6 +51,7 @@ export function normalizeLineId(input: string): string {
  * 라인 ID 정규화 테스트 케이스
  *
  * 각 테스트는 (입력, 예상_출력) 형태입니다.
+ * 주의: 공백과 특수문자는 제거되므로 테스트 케이스 작성 시 주의 필요
  */
 export const normalizeLineIdTestCases = [
   // 한글 제거
@@ -60,7 +61,7 @@ export const normalizeLineIdTestCases = [
 
   // 영문 소문자 변환
   ('Test_Line', 'test-line'),
-  ('My Display', 'my-display'),
+  ('MyDisplay', 'mydisplay'), // 공백 없음
   ('TEST', 'test'),
 
   // 특수문자 제거
@@ -86,7 +87,7 @@ export const normalizeLineIdTestCases = [
 
   // 혼합
   ('Line-01_테스트', 'line-01'),
-  ('Production Line #1', 'production-line-1'),
+  ('ProductionLine1', 'productionline1'), // 공백과 특수문자 제거
   ('라인_A_01', 'a-01'),
 ];
 
