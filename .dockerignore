@@ -62,5 +62,5 @@ temp
 .editorconfig
 .eslintrc
 .prettierrc
-tsconfig.json
+# tsconfig.json  (Docker 빌드에서 필요하므로 주석 처리)
 webpack.config.js
