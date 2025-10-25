@@ -4,28 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vooster Display - 설정</title>
-  <style>
-    body {
-      padding: 40px;
-      max-width: 800px;
-      margin: 0 auto;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }
-    h1 {
-      font-size: 28px;
-      margin: 0 0 20px 0;
-      color: #333;
-    }
-    p {
-      color: #666;
-      font-size: 16px;
-      line-height: 1.6;
-    }
-  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h1>⚙️ Vooster Display 설정</h1>
-  <p>설정 UI는 T-016에서 구현됩니다.</p>
-  <p>이 페이지에서 디바이스 페어링, 알림 설정, 디버그 모드 등을 관리할 수 있습니다.</p>
+<body class="bg-gray-50 min-h-screen">
+  <div id="root"></div>
+  <script type="module" src="../dist/options.js"></script>
 </body>
 </html>

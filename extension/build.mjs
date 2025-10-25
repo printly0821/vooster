@@ -21,10 +21,8 @@ try {
 }
 
 // 2. esbuild 설정
-const buildOptions = {
-  entryPoints: ['src/background/service-worker.ts'],
+const commonOptions = {
   bundle: true,
-  outfile: 'dist/service-worker.js',
   format: 'esm',
   target: 'es2020',
   platform: 'browser',
@@ -36,17 +34,30 @@ const buildOptions = {
   },
 };
 
+const buildOptions = [
+  {
+    ...commonOptions,
+    entryPoints: ['src/background/service-worker.ts'],
+    outfile: 'dist/service-worker.js',
+  },
+  {
+    ...commonOptions,
+    entryPoints: ['src/options/index.tsx'],
+    outfile: 'dist/options.js',
+  },
+];
+
 // 3. 빌드 실행
 async function build() {
   try {
     if (isWatch) {
       console.log('🔄 Watch 모드 시작...\n');
-      const ctx = await esbuild.context(buildOptions);
-      await ctx.watch();
+      const contexts = await Promise.all(buildOptions.map(opt => esbuild.context(opt)));
+      await Promise.all(contexts.map(ctx => ctx.watch()));
       console.log('👀 파일 변경 감지 중...');
     } else {
       console.log('📦 빌드 시작...\n');
-      const result = await esbuild.build(buildOptions);
+      await Promise.all(buildOptions.map(opt => esbuild.build(opt)));
       console.log('✓ 빌드 완료');
     }
   } catch (error) {
