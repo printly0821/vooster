@@ -191,6 +191,13 @@ async function startServer() {
     app.use('/api/trigger', triggerRoutes);
     logger.info('✓ 트리거 API 라우트 등록 완료');
 
+    // T-019: 테스트 API (개발 환경에서만)
+    if (config.environment === 'development' || process.env.NODE_ENV === 'test') {
+      const testRoutes = await import('./routes/test');
+      app.use('/api/test', testRoutes.default);
+      logger.info('✓ 테스트 API 라우트 등록 완료');
+    }
+
     // 연결 처리 (기본 네임스페이스: 모바일-모니터 연결용)
     io.on('connection', socket => {
       customLogger.info('클라이언트 연결: %s', socket.id);
