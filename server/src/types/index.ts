@@ -172,3 +172,68 @@ export interface LogEntry {
   message: string;
   data?: Record<string, any>;
 }
+
+/**
+ * 채널로 전송되는 메시지
+ *
+ * Socket.IO 채널을 통해 브라우저 확장으로 전송되는 메시지의 구조
+ * txId를 통해 idempotency를 보장하고 중복 처리를 방지합니다
+ */
+export interface ChannelMessage {
+  /** 트랜잭션 ID (idempotency 및 ACK 추적용) */
+  txId: string;
+  /** 이벤트 타입 (navigate: 페이지 이동, command: 명령 실행, update: 상태 업데이트) */
+  eventType: 'navigate' | 'command' | 'update';
+  /** 메시지 페이로드 (이벤트 타입별 데이터) */
+  payload: any;
+  /** 메시지 전송 시간 (Unix 타임스탐프) */
+  timestamp: number;
+}
+
+/**
+ * 클라이언트가 서버로 보내는 ACK 메시지
+ *
+ * 브라우저 확장이 메시지를 수신하고 처리한 후 서버로 전송하는 확인 응답
+ */
+export interface AckMessage {
+  /** 원본 메시지의 트랜잭션 ID (어떤 메시지에 대한 ACK인지 식별) */
+  txId: string;
+  /** 실행 결과 (success: 성공, failed: 실패, timeout: 타임아웃) */
+  result: 'success' | 'failed' | 'timeout';
+  /** 브라우저 탭 ID (선택적, 여러 탭 중 어떤 탭에서 실행되었는지) */
+  tabId?: string;
+  /** ACK 전송 시간 (Unix 타임스탐프) */
+  ts: number;
+  /** 실패 시 에러 메시지 (선택적) */
+  error?: string;
+}
+
+/**
+ * 채널 상태 정보
+ *
+ * 특정 screenId 채널의 현재 상태를 나타냅니다
+ */
+export interface ChannelStatus {
+  /** 화면 ID (채널 식별자) */
+  screenId: string;
+  /** 현재 연결된 클라이언트 수 */
+  connected: number;
+  /** 온라인 여부 (1개 이상의 클라이언트가 연결되어 있으면 true) */
+  online: boolean;
+}
+
+/**
+ * emitToChannel 함수의 반환값
+ *
+ * 채널로 메시지를 전송한 결과를 나타냅니다
+ */
+export interface EmitResult {
+  /** 성공 여부 */
+  ok: boolean;
+  /** 트랜잭션 ID (성공 시 반환) */
+  txId?: string;
+  /** 메시지를 받은 클라이언트 수 (성공 시 반환) */
+  clientCount?: number;
+  /** 실패 이유 (duplicate: 중복 txId, no_clients: 클라이언트 없음, error: 기타 에러) */
+  reason?: 'duplicate' | 'no_clients' | 'error';
+}

@@ -25,6 +25,7 @@ import {
 import { sessionService } from './services/sessionService';
 import { initSessionPairingService } from './services/sessionPairingService';
 import { setupDisplayNamespace } from './events/displayHandlers';
+import { getChannelStatus } from './services/channelManager';
 
 /**
  * Socket.IO 서버 시작
@@ -138,6 +139,13 @@ async function startServer() {
     // /display 네임스페이스 설정 (브라우저 확장용)
     setupDisplayNamespace(io);
     logger.info('✓ /display 네임스페이스가 설정되었습니다');
+
+    // 채널 상태 조회 API
+    app.get('/api/channels/:screenId', (_req, res) => {
+      const { screenId } = _req.params;
+      const status = getChannelStatus(io, screenId);
+      res.json(status);
+    });
 
     // 연결 처리 (기본 네임스페이스: 모바일-모니터 연결용)
     io.on('connection', socket => {

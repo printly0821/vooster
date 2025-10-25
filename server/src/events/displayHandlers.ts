@@ -9,6 +9,7 @@
 import { Server, Socket, Namespace } from 'socket.io';
 import { verifyDisplayToken } from '../middleware/auth';
 import { disconnectExistingDevice } from '../utils/socketManager';
+import { subscribeToChannel } from '../services/channelManager';
 import { logger } from '../utils/logger';
 import { DisplayClientPayload, DisplaySocketData } from '../types';
 
@@ -68,7 +69,10 @@ export function handleDisplayAuth(
   // 5. 클라이언트에 인증 성공 알림
   socket.emit('auth_success', { screenId });
 
-  // 6. 인증 성공 로깅
+  // 6. 채널 구독 (screenId 기반 메시지 수신)
+  subscribeToChannel(socket, screenId);
+
+  // 7. 인증 성공 로깅
   logger.info('디스플레이 클라이언트 인증 성공: deviceId=%s, screenId=%s, socketId=%s, userId=%s, ip=%s', deviceId, screenId, socket.id, claims.sub, socket.handshake.address);
 }
 
