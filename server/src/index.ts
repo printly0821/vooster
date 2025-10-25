@@ -24,6 +24,7 @@ import {
 } from './events/handlers';
 import { sessionService } from './services/sessionService';
 import { initSessionPairingService } from './services/sessionPairingService';
+import { setupDisplayNamespace } from './events/displayHandlers';
 
 /**
  * Socket.IO 서버 시작
@@ -131,10 +132,14 @@ async function startServer() {
       maxHttpBufferSize: 1e6, // 1MB
     });
 
-    // JWT 인증 미들웨어 적용
+    // JWT 인증 미들웨어 적용 (기본 네임스페이스)
     io.use(authMiddleware(config.jwtSecret));
 
-    // 연결 처리
+    // /display 네임스페이스 설정 (브라우저 확장용)
+    setupDisplayNamespace(io);
+    logger.info('✓ /display 네임스페이스가 설정되었습니다');
+
+    // 연결 처리 (기본 네임스페이스: 모바일-모니터 연결용)
     io.on('connection', socket => {
       customLogger.info('클라이언트 연결: %s', socket.id);
 

@@ -201,7 +201,7 @@ describe('displayHandlers', () => {
     it('클라이언트 연결 시 이벤트 핸들러를 등록해야 함', () => {
       // Arrange
       let connectionHandler: any;
-      mockNamespace.on.mockImplementation((event, handler) => {
+      mockNamespace.on.mockImplementation((event: string, handler: any) => {
         if (event === 'connection') {
           connectionHandler = handler;
         }
@@ -222,7 +222,7 @@ describe('displayHandlers', () => {
     it('5초 이내 인증하지 않으면 연결을 종료해야 함', (done) => {
       // Arrange
       let connectionHandler: any;
-      mockNamespace.on.mockImplementation((event, handler) => {
+      mockNamespace.on.mockImplementation((event: string, handler: any) => {
         if (event === 'connection') {
           connectionHandler = handler;
         }
@@ -246,13 +246,13 @@ describe('displayHandlers', () => {
       let connectionHandler: any;
       let authHandler: any;
 
-      mockNamespace.on.mockImplementation((event, handler) => {
+      mockNamespace.on.mockImplementation((event: string, handler: any) => {
         if (event === 'connection') {
           connectionHandler = handler;
         }
       });
 
-      mockSocket.on.mockImplementation((event, handler) => {
+      mockSocket.on.mockImplementation((event: string, handler: any) => {
         if (event === 'auth') {
           authHandler = handler;
         }
