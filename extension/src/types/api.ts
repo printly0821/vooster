@@ -36,13 +36,16 @@ export interface RegisterDisplayRequest {
 /**
  * 디스플레이 등록 성공 응답
  *
- * 서버에서 생성된 displayId를 받아 Storage에 저장합니다.
+ * 서버에서 생성된 screenId를 받아 Storage에 저장합니다.
+ * screenId 형식: "screen:orgId:lineId" (예: "screen:default:production-line-01")
  */
 export interface RegisterDisplayResponse {
-  /** 서버에서 생성한 디스플레이 ID (UUID) */
-  displayId: string;
-  /** 등록 성공 메시지 */
-  message: string;
+  /** 서버에서 생성한 화면 ID (형식: screen:orgId:lineId) */
+  screenId: string;
+  /** 등록 상태 ('registered' 새 등록 | 'updated' 기존 업데이트) */
+  status: 'registered' | 'updated';
+  /** 서버 응답 여부 */
+  ok: boolean;
 }
 
 /**
