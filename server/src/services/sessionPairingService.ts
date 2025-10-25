@@ -3,7 +3,7 @@
  * QR 기반 세션/소켓 룸 페어링 로직을 관리합니다.
  */
 
-import { sign, verify, SignOptions } from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { customAlphabet } from 'nanoid';
 import { PairingSession, SessionPairingPayload } from '../types';
 import { logger } from '../utils/logger';
@@ -47,7 +47,7 @@ class SessionPairingService {
       sub: userId,
     };
 
-    const pairingToken = sign(payload, this.config.jwtSecret, {
+    const pairingToken = jwt.sign(payload, this.config.jwtSecret, {
       expiresIn: this.config.tokenExpiresIn,
     } as SignOptions);
 
@@ -120,7 +120,7 @@ class SessionPairingService {
       }
 
       // 토큰 검증
-      const payload = verify(token, this.config.jwtSecret) as SessionPairingPayload;
+      const payload = jwt.verify(token, this.config.jwtSecret) as SessionPairingPayload;
 
       // 세션 ID 일치 확인
       if (payload.sid !== sessionId) {

@@ -3,7 +3,7 @@
  */
 
 import { Socket } from 'socket.io';
-import { verify } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { JWTPayload, SocketUser, DisplayAuthClaims } from '../types';
 import { logger } from '../utils/logger';
 
@@ -23,7 +23,7 @@ export function authMiddleware(jwtSecret: string) {
       }
 
       // JWT 토큰 검증
-      const decoded = verify(token as string, jwtSecret) as JWTPayload;
+      const decoded = jwt.verify(token as string, jwtSecret) as JWTPayload;
 
       // 사용자 정보를 socket.data에 저장
       socket.data.user = {
@@ -81,7 +81,7 @@ export function verifyDisplayToken(
 ): DisplayAuthClaims | null {
   try {
     // 1. JWT 토큰 검증 및 디코딩
-    const decoded = verify(token, jwtSecret) as DisplayAuthClaims;
+    const decoded = jwt.verify(token, jwtSecret) as DisplayAuthClaims;
 
     // 2. scopes 배열에서 필요한 권한 확인
     const requiredScope = `display:${requiredScreenId}`;
