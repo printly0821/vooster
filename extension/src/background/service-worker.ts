@@ -21,6 +21,84 @@ import {
 import type { RuntimeMessage } from '../types/events.js';
 import { isMessageType } from '../types/events.js';
 import type { UserSettings } from '../types/storage.js';
+import { getGlobalSocketClient } from './socket-client.js';
+import { registerNavigateHandler } from './navigate-handler.js';
+
+// ============================================================================
+// WebSocket 연결 관리 (T-017)
+// ============================================================================
+
+/**
+ * WebSocket 연결 함수
+ *
+ * 저장된 페어링 정보를 사용하여 Socket.IO 서버에 연결합니다.
+ * 페어링되지 않았으면 연결을 시도하지 않습니다.
+ *
+ * @throws {Error} 연결 실패 시
+ *
+ * @example
+ * await connectWebSocket();
+ */
+async function connectWebSocket(): Promise<void> {
+  try {
+    // 1. 페어링 정보 확인
+    const pairing = await getConfig('pairing');
+
+    if (!pairing?.isPaired || !pairing.authToken || !pairing.displayId) {
+      console.log('[ServiceWorker] 페어링되지 않음, WebSocket 연결 스킵');
+      return;
+    }
+
+    // 2. 서버 URL 확인
+    const serverUrl = pairing.wsServerUrl || 'http://localhost:3000';
+
+    console.log('[ServiceWorker] WebSocket 연결 시작:', {
+      serverUrl,
+      displayId: pairing.displayId,
+    });
+
+    // 3. Socket.IO 클라이언트 초기화
+    const client = getGlobalSocketClient(serverUrl);
+
+    // 4. 이벤트 핸들러 등록
+    const eventHandlers = {
+      connected: async () => {
+        console.log('[ServiceWorker] WebSocket 연결 성공');
+      },
+      disconnected: async () => {
+        console.log('[ServiceWorker] WebSocket 연결 해제');
+      },
+      error: async (error: any) => {
+        console.error('[ServiceWorker] WebSocket 오류:', error);
+      },
+    };
+
+    // 5. Socket.IO 연결
+    await client.connect(
+      {
+        token: pairing.authToken,
+        deviceId: pairing.displayId || 'unknown',
+        screenId: pairing.displayId || 'unknown',
+      },
+      eventHandlers
+    );
+
+    // 6. Navigate 핸들러 등록
+    registerNavigateHandler();
+
+    console.log('[ServiceWorker] WebSocket 연결 및 핸들러 등록 완료');
+  } catch (error) {
+    console.error('[ServiceWorker] WebSocket 연결 실패:', error);
+
+    // 연결 실패 시에도 에러를 throw하지 않음 (조용한 실패)
+    await addLog({
+      level: 'warn',
+      message: `WebSocket 연결 실패: ${error instanceof Error ? error.message : String(error)}`,
+      source: 'ServiceWorker',
+      timestamp: new Date().toISOString(),
+    });
+  }
+}
 
 // ============================================================================
 // 생명주기 이벤트 핸들러
@@ -96,22 +174,22 @@ chrome.runtime.onInstalled.addListener(async (details) => {
  * 브라우저 재시작 후 확장이 활성화될 때 호출됩니다.
  * WebSocket 재연결 등의 초기화 작업을 수행합니다.
  *
- * TODO: T-017에서 WebSocket 재연결 로직 구현
+ * T-017: WebSocket 자동 재연결 구현
  */
 chrome.runtime.onStartup.addListener(async () => {
-  console.log('[ServiceWorker] Browser startup');
+  console.log('[ServiceWorker] 브라우저 시작');
 
   try {
     // 런타임 상태 초기화
     await updateRuntimeState('wsConnectionStatus', 'disconnected');
     await updateRuntimeState('reconnectAttempts', 0);
 
-    // WebSocket 재연결 시도 (T-017에서 구현)
-    // await reconnectWebSocket();
+    // WebSocket 재연결 시도 (T-017 구현)
+    await connectWebSocket();
 
-    console.log('[ServiceWorker] Startup initialization complete');
+    console.log('[ServiceWorker] 시작 초기화 완료');
   } catch (error) {
-    console.error('[ServiceWorker] Startup error:', error);
+    console.error('[ServiceWorker] 시작 오류:', error);
     await addLog({
       level: 'error',
       message: '시작 시 초기화 오류',
@@ -187,15 +265,16 @@ async function handlePairingCancel(message: RuntimeMessage): Promise<void> {
   }
 
   try {
-    console.log('[ServiceWorker] Pairing cancelled');
+    console.log('[ServiceWorker] 페어링 취소됨');
 
     // 페어링 정보 삭제
     await setConfig('pairing', {
       isPaired: false,
     });
 
-    // WebSocket 연결 종료 (T-017에서 구현)
-    // await disconnectWebSocket();
+    // WebSocket 연결 종료 (T-017 구현)
+    const client = getGlobalSocketClient();
+    client.disconnect();
 
     await updateRuntimeState('wsConnectionStatus', 'disconnected');
 
@@ -206,7 +285,7 @@ async function handlePairingCancel(message: RuntimeMessage): Promise<void> {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('[ServiceWorker] Pairing cancel error:', error);
+    console.error('[ServiceWorker] 페어링 취소 오류:', error);
     await addLog({
       level: 'error',
       message: '페어링 취소 중 오류',
@@ -347,19 +426,19 @@ async function handleReconnect(message: RuntimeMessage): Promise<void> {
   }
 
   try {
-    console.log('[ServiceWorker] Reconnect requested');
+    console.log('[ServiceWorker] 재연결 요청됨');
 
-    // WebSocket 재연결 시도 (T-017에서 구현)
-    // await reconnectWebSocket(true);
+    // WebSocket 재연결 시도 (T-017 구현)
+    await connectWebSocket();
 
     await addLog({
       level: 'info',
-      message: '재연결 요청됨',
+      message: '재연결 요청 처리됨',
       source: 'ServiceWorker',
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('[ServiceWorker] Reconnect error:', error);
+    console.error('[ServiceWorker] 재연결 오류:', error);
     await addLog({
       level: 'error',
       message: '재연결 중 오류',
