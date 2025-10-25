@@ -66,11 +66,37 @@ async function startServer() {
     // 보안 미들웨어
     app.use(helmet());
 
-    // CORS 설정
+    // CORS 설정 (Chrome Extension 지원)
     app.use(
       cors({
-        origin: config.corsOrigins,
+        origin: (origin, callback) => {
+          // 1. origin이 없으면 허용 (같은 서버 요청)
+          if (!origin) {
+            return callback(null, true);
+          }
+
+          // 2. chrome-extension:// 프로토콜 모두 허용
+          if (origin.startsWith('chrome-extension://')) {
+            return callback(null, true);
+          }
+
+          // 3. 환경변수의 명시적 origin 확인
+          const allowedOrigins = config.corsOrigins.filter((o) => !o.includes('*'));
+          if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+          }
+
+          // 4. 개발 환경에서는 모두 허용
+          if (config.environment === 'development') {
+            return callback(null, true);
+          }
+
+          // 5. 그 외는 거부
+          callback(new Error('Not allowed by CORS'));
+        },
         credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
       })
     );
 
