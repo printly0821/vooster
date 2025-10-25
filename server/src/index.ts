@@ -26,6 +26,11 @@ import { sessionService } from './services/sessionService';
 import { initSessionPairingService } from './services/sessionPairingService';
 import { setupDisplayNamespace } from './events/displayHandlers';
 import { getChannelStatus } from './services/channelManager';
+import displayRoutes from './routes/displays';
+import pairingRoutes from './routes/pairing';
+import createTriggerRouter from './routes/triggers';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { requestLoggerMiddleware } from './middleware/requestLogger';
 
 /**
  * Socket.IO 서버 시작
@@ -55,6 +60,9 @@ async function startServer() {
     // Express 앱 생성
     const app = express();
 
+    // JSON 파싱 미들웨어
+    app.use(express.json());
+
     // 보안 미들웨어
     app.use(helmet());
 
@@ -66,11 +74,8 @@ async function startServer() {
       })
     );
 
-    // 요청 로깅
-    app.use((req, _res, next) => {
-      customLogger.debug('%s %s', req.method, req.path);
-      next();
-    });
+    // 요청 로깅 (T-014)
+    app.use(requestLoggerMiddleware);
 
     // 레이트 리밋
     const limiter = rateLimit({
@@ -140,12 +145,25 @@ async function startServer() {
     setupDisplayNamespace(io);
     logger.info('✓ /display 네임스페이스가 설정되었습니다');
 
-    // 채널 상태 조회 API
+    // 채널 상태 조회 API (T-013)
     app.get('/api/channels/:screenId', (_req, res) => {
       const { screenId } = _req.params;
       const status = getChannelStatus(io, screenId);
       res.json(status);
     });
+
+    // T-014: 디스플레이 관리 API
+    app.use('/api/displays', displayRoutes);
+    logger.info('✓ 디스플레이 API 라우트 등록 완료');
+
+    // T-014: 페어링 API
+    app.use('/api/pair', pairingRoutes);
+    logger.info('✓ 페어링 API 라우트 등록 완료');
+
+    // T-014: 트리거 API (io 인스턴스 필요)
+    const triggerRoutes = createTriggerRouter(io);
+    app.use('/api/trigger', triggerRoutes);
+    logger.info('✓ 트리거 API 라우트 등록 완료');
 
     // 연결 처리 (기본 네임스페이스: 모바일-모니터 연결용)
     io.on('connection', socket => {
@@ -184,6 +202,12 @@ async function startServer() {
     setInterval(() => {
       sessionService.cleanupInactiveSessions();
     }, 10 * 60 * 1000);
+
+    // T-014: 404 핸들러 (모든 라우트 후에 추가)
+    app.use(notFoundHandler);
+
+    // T-014: 전역 에러 핸들러 (가장 마지막에 추가)
+    app.use(errorHandler);
 
     // 서버 시작
     server.listen(config.port, () => {

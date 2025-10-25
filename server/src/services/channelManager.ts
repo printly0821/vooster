@@ -40,8 +40,10 @@ function addTxId(txId: string): void {
 
   // 캐시 크기가 초과하면 가장 오래된 항목 제거 (FIFO)
   if (recentTxIds.size > MAX_TX_CACHE_SIZE) {
-    const first = recentTxIds.values().next().value;
-    recentTxIds.delete(first);
+    const first = recentTxIds.values().next().value as string;
+    if (first) {
+      recentTxIds.delete(first);
+    }
   }
 }
 
@@ -133,7 +135,7 @@ export function emitToChannel(
 
     // 4. /display 네임스페이스에서 채널 룸 조회
     const displayNs: Namespace = io.of('/display');
-    const room = displayNs.adapter.rooms.get(screenId);
+    const room = displayNs.adapter?.rooms?.get(screenId);
 
     // 5. 채널에 연결된 클라이언트 확인
     if (!room || room.size === 0) {
