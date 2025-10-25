@@ -34,7 +34,7 @@ export function handleDisplayAuth(
   payload: DisplayClientPayload
 ): void {
   const { token, deviceId, screenId } = payload;
-  const jwtSecret = process.env.JWT_SECRET || '';
+  const jwtSecret = process.env.SOCKET_JWT_SECRET || '';
 
   // 1. 입력값 검증
   if (!token || !deviceId || !screenId) {
