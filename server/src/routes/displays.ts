@@ -26,12 +26,32 @@ router.post('/register', displayRegisterLimiter, async (req: Request, res: Respo
     const parsed = displayRegisterSchema.safeParse(req.body);
 
     if (!parsed.success) {
-      logger.warn('디스플레이 등록 검증 실패: errors=%s', JSON.stringify(parsed.error.errors));
+      // 검증 에러를 상세히 로깅 (각 필드별 에러 메시지)
+      const errorDetails = parsed.error.errors.map((err) => ({
+        field: err.path.join('.'),
+        message: err.message,
+        code: err.code,
+      }));
+      logger.warn(
+        '디스플레이 등록 검증 실패: deviceId=%s, errors=%s',
+        req.body.deviceId || 'N/A',
+        JSON.stringify(errorDetails)
+      );
       return res.status(400).json({
         ok: false,
         reason: 'validation_error',
         message: '입력값 검증에 실패했습니다.',
-        errors: parsed.error.errors,
+        // Extension 개발자를 위한 상세 에러 정보
+        details: {
+          fields: errorDetails,
+          received: {
+            deviceId: req.body.deviceId,
+            name: req.body.name,
+            purpose: req.body.purpose,
+            orgId: req.body.orgId,
+            lineId: req.body.lineId,
+          },
+        },
       });
     }
 

@@ -14,6 +14,7 @@ import type {
   ApiErrorResponse,
 } from '../types/api';
 import { API_BASE_URL, API_ENDPOINTS } from '../types/api';
+import { normalizeLineId } from './normalizeLineId';
 
 /**
  * API 에러 클래스
@@ -90,7 +91,7 @@ async function request<T>(
  * 필수 필드는 deviceId와 name이며, 나머지는 기본값으로 자동 설정됩니다:
  * - purpose: 'display' (고정값)
  * - orgId: 'default' (고정값)
- * - lineId: name (디스플레이 이름 사용)
+ * - lineId: name을 정규화하여 사용 (소문자, 숫자, 하이픈만)
  *
  * @param data - 디스플레이 정보 (deviceId, name은 필수, 나머지는 자동 설정)
  * @returns 서버에서 생성한 screenId
@@ -99,23 +100,26 @@ async function request<T>(
  * @example
  * const response = await registerDisplay({
  *   deviceId: 'uuid-v4-string',
- *   name: 'My Display',
+ *   name: '생산자-001',
  *   purpose: 'display',
  *   orgId: 'default',
- *   lineId: 'My Display'
+ *   lineId: '생산자-001' // 자동으로 '001'로 정규화됨
  * });
- * console.log(response.displayId); // 'screen:default:My Display'
+ * console.log(response.displayId); // 'screen:default:001'
  */
 export async function registerDisplay(
   data: RegisterDisplayRequest
 ): Promise<RegisterDisplayResponse> {
-  // T-014 서버 스펙에 맞는 요청 형식으로 변환
+  // 1. lineId 정규화 (서버 스키마 규칙 준수)
+  const normalizedLineId = normalizeLineId(data.lineId || data.name);
+
+  // 2. T-014 서버 스펙에 맞는 요청 형식으로 변환
   const requestData: RegisterDisplayRequest = {
     deviceId: data.deviceId,
     name: data.name,
     purpose: data.purpose || 'display',
     orgId: data.orgId || 'default',
-    lineId: data.lineId || data.name,
+    lineId: normalizedLineId,
   };
 
   return await request<RegisterDisplayResponse>(
