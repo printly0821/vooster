@@ -108,13 +108,13 @@ export function QRPairing(props: QRPairingProps) {
       <div className="flex flex-col items-center gap-4">
         {/* Canvas */}
         <div className={`p-4 bg-gray-50 rounded-lg ${isExpired ? 'opacity-50' : ''}`}>
-          <canvas ref={canvasRef} />
+          <canvas ref={canvasRef} data-testid="qr-canvas" />
         </div>
 
         {/* 토큰 텍스트 (디버깅용) */}
         <div className="text-center">
           <p className="text-sm text-gray-500">페어링 코드</p>
-          <p className="text-xl font-mono font-bold text-gray-800">
+          <p className="text-xl font-mono font-bold text-gray-800" data-testid="pairing-code">
             {pairingToken}
           </p>
         </div>
