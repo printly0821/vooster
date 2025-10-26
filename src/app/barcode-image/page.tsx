@@ -38,15 +38,11 @@ export default function BarcodeImagePage() {
           margin: '0 auto',
         }}>
           {/* 헤더 */}
-          <div style={{
+          <div className="print-header" style={{
             textAlign: 'center',
             marginBottom: '30px',
             paddingBottom: '20px',
             borderBottom: '2px solid #333',
-            '@media print': {
-              marginBottom: '20px',
-              paddingBottom: '10px',
-            },
           }}>
             <h1 style={{
               fontSize: '28px',
@@ -66,20 +62,16 @@ export default function BarcodeImagePage() {
           </div>
 
           {/* 바코드 그리드 */}
-          <div style={{
+          <div className="print-grid" style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
             gap: '20px',
             marginBottom: '40px',
-            '@media print': {
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '15px',
-              marginBottom: '0',
-            },
           }}>
             {orderNumbers.map((orderNumber, index) => (
               <div
                 key={orderNumber}
+                className="print-item"
                 style={{
                   border: '1px solid #ddd',
                   padding: '20px',
@@ -87,25 +79,15 @@ export default function BarcodeImagePage() {
                   backgroundColor: '#fafafa',
                   textAlign: 'center',
                   pageBreakInside: 'avoid',
-                  '@media print': {
-                    border: '1px solid #999',
-                    padding: '15px',
-                    borderRadius: '4px',
-                    backgroundColor: '#fff',
-                  },
                 }}
               >
                 {/* 바코드 */}
-                <div style={{
+                <div className="print-barcode" style={{
                   marginBottom: '12px',
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
                   minHeight: '80px',
-                  '@media print': {
-                    marginBottom: '8px',
-                    minHeight: '60px',
-                  },
                 }}>
                   <img
                     src={`https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(
@@ -161,16 +143,13 @@ export default function BarcodeImagePage() {
           </div>
 
           {/* 인쇄 안내 */}
-          <div style={{
+          <div className="print-hide" style={{
             backgroundColor: '#e3f2fd',
             border: '1px solid #2196F3',
             borderRadius: '8px',
             padding: '20px',
             marginTop: '40px',
             color: '#0d47a1',
-            '@media print': {
-              display: 'none',
-            },
           }}>
             <h3 style={{
               margin: '0 0 12px 0',
@@ -195,16 +174,13 @@ export default function BarcodeImagePage() {
           </div>
 
           {/* 스캔 안내 */}
-          <div style={{
+          <div className="print-hide" style={{
             backgroundColor: '#f3e5f5',
             border: '1px solid #9c27b0',
             borderRadius: '8px',
             padding: '20px',
             marginTop: '20px',
             color: '#4a148c',
-            '@media print': {
-              display: 'none',
-            },
           }}>
             <h3 style={{
               margin: '0 0 12px 0',
@@ -261,6 +237,38 @@ export default function BarcodeImagePage() {
 
           img {
             break-inside: avoid;
+          }
+
+          /* 헤더 스타일 */
+          .print-header {
+            margin-bottom: 20px !important;
+            padding-bottom: 10px !important;
+          }
+
+          /* 그리드 스타일 */
+          .print-grid {
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 15px !important;
+            margin-bottom: 0 !important;
+          }
+
+          /* 바코드 아이템 스타일 */
+          .print-item {
+            border: 1px solid #999 !important;
+            padding: 15px !important;
+            border-radius: 4px !important;
+            background-color: #fff !important;
+          }
+
+          /* 바코드 컨테이너 스타일 */
+          .print-barcode {
+            margin-bottom: 8px !important;
+            min-height: 60px !important;
+          }
+
+          /* 인쇄 시 숨김 */
+          .print-hide {
+            display: none !important;
           }
         }
       `}</style>

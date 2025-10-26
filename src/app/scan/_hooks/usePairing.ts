@@ -67,6 +67,11 @@ export function usePairing(): UsePairingReturn {
 
         // Supabase 세션에서 JWT 토큰 가져오기
         const supabase = getSupabaseBrowserClient();
+
+        if (!supabase) {
+          throw new Error('Supabase 클라이언트를 사용할 수 없습니다.');
+        }
+
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
 
