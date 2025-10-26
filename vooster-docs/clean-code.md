@@ -1,12 +1,3 @@
----
-title: "Clean Code Guidelines"
-description: "클린 코드 가이드라인 - 코드 품질 및 유지보수성"
-category: "technical"
-author: "신우진"
-date: "2025-10-18"
-public: false
-order: 4
----
 
 # Clean Code Guidelines
 

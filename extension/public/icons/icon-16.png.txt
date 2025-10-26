@@ -1,0 +1,2 @@
+임시로 SVG를 사용하거나 PNG를 생성해야 합니다.
+간단한 방법: https://via.placeholder.com/16x16/4A90E2/ffffff?text=V 에서 다운로드

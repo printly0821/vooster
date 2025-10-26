@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # Socket.IO 실시간 통신 서버 (개발 환경)
+  socketio:
+    build:
+      context: .
+      dockerfile: Dockerfile.socketio
+    container_name: vooster-socketio
+    ports:
+      - "3001:3000"  # 외부 3001 → 컨테이너 내부 3000
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      LOG_LEVEL: info
+      # CORS: Next.js(호스트), Chrome Extension 모두 허용
+      CORS_ORIGINS: http://localhost:3000,chrome-extension://*
+      # JWT 시크릿 (개발용, 프로덕션에서 반드시 변경)
+      SOCKET_JWT_SECRET: dev-secret-key-change-in-production
+      # WebSocket URL (클라이언트에서 사용)
+      WS_URL: ws://localhost:3001
+      # 페어링 URL
+      PAIRING_URL_BASE: http://localhost:3000/pair
+    volumes:
+      # Hot Reload: 호스트 server/ → 컨테이너 /app/server
+      - ./server:/app/server
+      # node_modules는 컨테이너 내부 것 사용 (호스트 충돌 방지)
+      - /app/node_modules
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - vooster
+    # stdin/tty: 개발 시 터미널 입력 가능
+    stdin_open: true
+    tty: true
+
+  # Redis 메시지 브로커 및 캐시
+  # 현재는 선택사항, 향후 Socket.IO Redis Adapter 또는 Session 저장소로 사용
+  redis:
+    image: redis:7-alpine
+    container_name: vooster-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      # 영구 저장소: Redis 데이터 보존
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - vooster
+    # Redis 설정: 백그라운드 저장 활성화
+    command: redis-server --appendonly yes
+
+# 영구 볼륨 정의
+volumes:
+  redis-data:
+    driver: local
+
+# 네트워크 정의
+networks:
+  vooster:
+    driver: bridge
+    name: vooster_network
+
+# 환경변수 파일: .env
+# NODE_ENV=production
+# SOCKET_JWT_SECRET=your-secret-key-here
+# CORS_ORIGINS=https://app.example.com,https://monitor.example.com
+# LOG_LEVEL=info
+
+# 실행 명령어:
+# docker-compose up -d
+# docker-compose logs -f
+# docker-compose down

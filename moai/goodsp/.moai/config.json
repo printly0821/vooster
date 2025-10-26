@@ -1,0 +1,15 @@
+{
+  "projectName": "goodsp",
+  "mode": "personal",
+  "locale": "en",
+  "language": "generic",
+  "language_detection": {
+    "detected_language": "generic",
+    "detection_method": "cli_default",
+    "confidence": null,
+    "markers": [],
+    "confirmed_by": null
+  },
+  "moai_adk_version": "0.4.10",
+  "optimized": false
+}

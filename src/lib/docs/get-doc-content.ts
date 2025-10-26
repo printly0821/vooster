@@ -24,8 +24,10 @@ export interface DocContent {
 
 /**
  * 문서 파일 경로 매핑
+ * key: 슬러그, value: 프로젝트 루트로부터의 상대 경로
  */
 const DOC_PATHS: Record<string, string> = {
+  // 기존 문서
   'barcode-guide': 'docs/web-barcode-scanning-guide.md',
   'prd': 'vooster-docs/prd.md',
   'architecture': 'vooster-docs/architecture.md',
@@ -35,6 +37,31 @@ const DOC_PATHS: Record<string, string> = {
   'step-by-step': 'vooster-docs/step-by-step.md',
   'clean-code': 'vooster-docs/clean-code.md',
   'field-analysis': 'vooster-docs/field-requirements-analysis.md',
+
+  // 원격 제어 시스템 문서
+  // 개요 및 시작
+  'remote-control/index': 'vooster-docs/TYPESCRIPT_REMOTE_CONTROL_INDEX.md',
+  'remote-control/summary': 'vooster-docs/REMOTE_CONTROL_SUMMARY.md',
+  'remote-control/readme': 'vooster-docs/REMOTE-CONTROL-README.md',
+  'remote-control/fullstack-summary': 'vooster-docs/FULLSTACK-STRATEGY-SUMMARY.md',
+
+  // 기술 설계 - TypeScript/아키텍처
+  'remote-control/rpc-comparison': 'vooster-docs/rpc-solutions-comparison.md',
+  'remote-control/architecture': 'vooster-docs/remote-control-architecture.md',
+  'remote-control/implementation': 'vooster-docs/remote-control-implementation.md',
+
+  // 기술 설계 - 분산 제어
+  'remote-control/distributed-architecture': 'vooster-docs/distributed-control-system-architecture.md',
+  'remote-control/distributed-implementation': 'vooster-docs/distributed-control-implementation-guide.md',
+  'remote-control/distributed-quick-start': 'vooster-docs/distributed-control-quick-start.md',
+
+  // 기술 설계 - 프론트엔드
+  'remote-control/frontend-websocket': 'vooster-docs/frontend-remote-control-websocket.md',
+
+  // 풀스택 및 배포
+  'remote-control/fullstack-design': 'vooster-docs/remote-control-fullstack.md',
+  'remote-control/fullstack-implementation': 'vooster-docs/implementation-guide.md',
+  'remote-control/deployment': 'vooster-docs/deployment-guide.md',
 };
 
 /**

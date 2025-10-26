@@ -1,0 +1,215 @@
+# 브라우저 확장 Options 페이지 및 WeChat 스타일 페어링
+
+**Task ID:** T-016
+**Status:** BACKLOG
+**Importance:** MUST
+**Complexity:** 7/10
+**Urgency:** 8/10
+**Dependencies:** T-015, T-014
+
+## Description
+
+### 요구사항
+- 브라우저 확장 Options 페이지 UI 구현 디스플레이 메타데이터 입력 및 WeChat 스타일 QR 페어링
+- 디스플레이 정보 입력 폼 이름 커팅기A3 용도 커팅라인 조직 본사 필드 제공
+- QR 코드 화면 표시 POST /api/pair/qr 호출하여 QR 데이터 받아 qrcode.react로 렌더링
+- 폴링으로 승인 대기 GET /api/pair/poll/:sessionId를 3초마다 호출하여 스마트폰 승인 감지
+- 승인 완료 시 토큰 저장 및 WebSocket 연결 chrome.storage에 토큰 저장 후 Service Worker에 재연결 신호
+- 연결 상태 실시간 표시 WebSocket 연결 성공 실패 재연결 상태를 배지 및 텍스트로 표시
+- 사용자 친화적 UX 진행 단계 표시 대기 시간 카운트다운 명확한 에러 안내
+- 다크 모드 지원 시스템 설정 자동 감지 및 수동 토글
+
+### 구현 상세
+
+**A. 페이지 구조**
+- options.html options.css options.ts 파일 생성 TailwindCSS CDN 사용 또는 인라인 스타일
+- 초기 로딩 시 chrome.storage에서 isPaired 확인 페어링 완료 시 대시보드 미완료 시 설정 폼 표시
+
+**B. 디스플레이 메타데이터 입력 폼**
+- 이름 입력 input name="displayName" placeholder="예: 커팅기-A3" 필수
+- 용도 입력 input name="purpose" placeholder="예: 커팅 라인" 필수
+- 조직 입력 input name="orgId" placeholder="예: 본사" 기본값 제공 가능
+- 저장 버튼 클릭 시 POST /api/displays/register 호출하여 서버에 등록 deviceId는 UUID 자동 생성
+- 등록 성공 시 screenId 받아서 저장 후 QR 페어링 단계로 전환
+
+**C. QR 코드 표시 및 승인 대기**
+- qrcode.react 라이브러리 사용 또는 qrcode 패키지로 canvas 렌더링
+- POST /api/pair/qr 호출하여 { sessionId, qrData, expiresIn } 받기
+- QR 코드 중앙 크게 표시 하단에 "스마트폰으로 이 QR을 스캔하세요" 안내 문구
+- 폴링 시작 setInterval 3초마다 GET /api/pair/poll/:sessionId 호출
+- 대기 시간 카운트다운 표시 "남은 시간: 4분 30초" 300초부터 감소
+- 승인 감지 시 { ok: true, token, screenId } 받아서 chrome.storage에 저장
+- 페어링 완료 후 Service Worker에 { type: 'reconnect' } 메시지 전송 WebSocket 연결 시작
+
+**D. 연결 상태 대시보드**
+- 상단 배지 녹색 연결됨 회색 연결 안됨 빨강 오류 실시간 업데이트
+- 디스플레이 정보 표시 이름 용도 screenId lastSeen 타임스탬프
+- heartbeat 상태 "마지막 동기화: 5초 전" 실시간 업데이트
+- 페어링 해제 버튼 클릭 시 chrome.storage 초기화 및 WebSocket 연결 종료 확인 모달 제공
+
+**E. 에러 처리 및 복구**
+- QR 만료 시 "QR 코드가 만료되었습니다" 메시지 및 재시도 버튼
+- 폴링 실패 시 3회 재시도 후 에러 표시 및 수동 재시도 옵션
+- 네트워크 에러 시 "서버에 연결할 수 없습니다" 상세 가이드 링크 제공
+
+### 의사코드
+```pseudo
+// options.ts
+import QRCode from 'qrcode'
+
+let pollInterval: number | null = null
+
+// 페이지 로드
+async function init() {
+  const config = await chrome.storage.local.get(['isPaired', 'screenId', 'displayName'])
+
+  if (config.isPaired) {
+    showDashboard(config)
+  } else {
+    showSetupForm()
+  }
+}
+
+// 단계 1: 디스플레이 정보 입력
+async function handleRegister() {
+  const displayName = document.getElementById('input-name').value
+  const purpose = document.getElementById('input-purpose').value
+  const orgId = document.getElementById('input-org').value || 'default'
+
+  // 서버에 등록 (deviceId 자동 생성)
+  const deviceId = await getOrCreateDeviceId()
+
+  const res = await fetch(`${API_URL}/api/displays/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deviceId, name: displayName, purpose, orgId, lineId: purpose }),
+  })
+
+  const { screenId } = await res.json()
+
+  // 저장
+  await chrome.storage.local.set({ deviceId, screenId, displayName, purpose, orgId })
+
+  // 단계 2로 전환
+  showQRPairing()
+}
+
+// 단계 2: QR 표시 및 승인 대기
+async function showQRPairing() {
+  const config = await chrome.storage.local.get(['deviceId', 'screenId'])
+
+  // QR 생성 요청
+  const res = await fetch(`${API_URL}/api/pair/qr`, {
+    method: 'POST',
+    body: JSON.stringify({ deviceId: config.deviceId, screenId: config.screenId }),
+  })
+
+  const { sessionId, qrData, expiresIn } = await res.json()
+
+  // QR 코드 표시
+  const canvas = document.getElementById('qr-canvas')
+  await QRCode.toCanvas(canvas, qrData, { width: 300 })
+
+  // 안내 메시지
+  document.getElementById('message').textContent = '스마트폰으로 이 QR을 스캔하세요'
+
+  // 카운트다운 시작
+  startCountdown(expiresIn)
+
+  // 폴링 시작
+  startPolling(sessionId)
+}
+
+function startPolling(sessionId) {
+  let attempts = 0
+
+  pollInterval = setInterval(async () => {
+    attempts++
+
+    try {
+      const res = await fetch(`${API_URL}/api/pair/poll/${sessionId}`)
+      const data = await res.json()
+
+      if (data.ok) {
+        // 승인 완료!
+        clearInterval(pollInterval)
+        await handlePairingSuccess(data.token, data.screenId)
+      } else if (attempts > 100) {
+        // 5분 초과 (3초 * 100 = 300초)
+        clearInterval(pollInterval)
+        showError('QR 코드가 만료되었습니다')
+      }
+    } catch (err) {
+      console.error('폴링 에러:', err)
+    }
+  }, 3000) // 3초마다
+}
+
+async function handlePairingSuccess(token, screenId) {
+  // 토큰 및 페어링 상태 저장
+  await chrome.storage.local.set({
+    token,
+    screenId,
+    isPaired: true,
+    pairedAt: Date.now(),
+  })
+
+  // Service Worker에 재연결 신호
+  chrome.runtime.sendMessage({ type: 'reconnect' })
+
+  // 성공 메시지
+  showSuccess('페어링 완료! 연결 중...')
+
+  // 3초 후 대시보드로 전환
+  setTimeout(() => location.reload(), 3000)
+}
+
+// 대시보드
+function showDashboard(config) {
+  // 연결 상태 요청
+  chrome.runtime.sendMessage({ type: 'get_status' }, (response) => {
+    updateStatusBadge(response.status)
+  })
+
+  // heartbeat 시작 (30초마다 서버에 등록)
+  startHeartbeat(config)
+}
+
+function startHeartbeat(config) {
+  chrome.alarms.create('heartbeat', { periodInMinutes: 0.5 }) // 30초
+
+  chrome.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === 'heartbeat') {
+      fetch(`${API_URL}/api/displays/register`, {
+        method: 'POST',
+        body: JSON.stringify(config),
+      })
+    }
+  })
+}
+
+// 페어링 해제
+async function handleUnpair() {
+  if (!confirm('페어링을 해제하시겠습니까?')) return
+
+  await chrome.storage.local.clear()
+  chrome.runtime.sendMessage({ type: 'disconnect' })
+  location.reload()
+}
+```
+
+### 테스트 전략
+- 단위 테스트 디스플레이 정보 검증 로직 이름 용도 조직 필수 필드 확인
+- 등록 테스트 POST /api/displays/register 호출 후 screenId 반환 확인
+- QR 생성 테스트 POST /api/pair/qr 호출 후 qrData와 sessionId 반환 확인 QR 코드 Canvas 렌더링 확인
+- 폴링 테스트 3초 간격 폴링 동작 확인 승인 전까지 반복 확인 만료 시 중단 확인
+- 페어링 성공 테스트 승인 후 토큰 및 screenId가 chrome.storage에 저장되는지 확인
+- 대시보드 테스트 페어링 완료 후 연결 상태 배지 표시 확인 heartbeat 동작 확인
+- 페어링 해제 테스트 해제 버튼 클릭 후 storage 초기화 및 페이지 리로드 확인
+- E2E Playwright로 전체 플로우 디스플레이 등록 QR 표시 폴링 대시보드 전환 검증
+- 다크 모드 테스트 시스템 설정 변경 시 자동 테마 전환 확인 수동 토글 동작 확인
+
+---
+
+**Created:** 2025-10-23T08:40:00.000Z
+**Updated:** 2025-10-23T08:40:00.000Z

@@ -1,0 +1,28 @@
+# Socket.IO 서버용 Dockerfile (개발 환경)
+# Node.js 20 Alpine 이미지 사용 (경량화)
+
+FROM node:20-alpine
+
+# 작업 디렉토리 설정
+WORKDIR /app
+
+# 패키지 파일 복사 및 의존성 설치
+COPY package*.json ./
+RUN npm ci
+
+# 소스 코드 복사
+COPY server/ ./server/
+COPY tsconfig.json ./
+
+# 환경 설정
+ENV NODE_ENV=development
+
+# 헬스 체크 (30초 간격으로 /health 엔드포인트 확인)
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+
+# 포트 노출
+EXPOSE 3000
+
+# 개발 서버 실행 (tsx --watch로 Hot Reload)
+CMD ["npm", "run", "server:dev"]

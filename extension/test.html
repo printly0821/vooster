@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>T-015 Service Worker 테스트</title>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    button {
+      margin: 10px 5px;
+      padding: 10px 20px;
+      font-size: 14px;
+    }
+    pre {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+    .success { color: green; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <h1>🧪 T-015 Service Worker 테스트</h1>
+
+  <h2>1. Storage 테스트</h2>
+  <button onclick="testGetStorage()">전체 Storage 조회</button>
+  <button onclick="testSetStorage()">테스트 데이터 저장</button>
+  <pre id="storage-result"></pre>
+
+  <h2>2. 메시지 핸들러 테스트</h2>
+  <button onclick="testPing()">Ping 전송</button>
+  <button onclick="testGetSettings()">설정 조회</button>
+  <button onclick="testGetPairingStatus()">페어링 상태 조회</button>
+  <pre id="message-result"></pre>
+
+  <script>
+    // Storage 테스트
+    async function testGetStorage() {
+      const result = await chrome.storage.local.get(null);
+      document.getElementById('storage-result').textContent =
+        JSON.stringify(result, null, 2);
+    }
+
+    async function testSetStorage() {
+      await chrome.storage.local.set({
+        testData: {
+          timestamp: Date.now(),
+          value: 'test-value-123'
+        }
+      });
+      document.getElementById('storage-result').innerHTML =
+        '<span class="success">✅ 테스트 데이터 저장 완료</span>';
+      setTimeout(testGetStorage, 500);
+    }
+
+    // 메시지 테스트
+    function testPing() {
+      chrome.runtime.sendMessage(
+        { type: 'ping', timestamp: Date.now() },
+        (response) => {
+          document.getElementById('message-result').textContent =
+            JSON.stringify(response, null, 2);
+        }
+      );
+    }
+
+    function testGetSettings() {
+      chrome.runtime.sendMessage(
+        { type: 'get_settings' },
+        (response) => {
+          document.getElementById('message-result').textContent =
+            JSON.stringify(response, null, 2);
+        }
+      );
+    }
+
+    function testGetPairingStatus() {
+      chrome.runtime.sendMessage(
+        { type: 'get_pairing_status' },
+        (response) => {
+          document.getElementById('message-result').textContent =
+            JSON.stringify(response, null, 2);
+        }
+      );
+    }
+
+    // 자동 실행
+    window.onload = () => {
+      console.log('Test page loaded');
+      testGetStorage();
+    };
+  </script>
+</body>
+</html>

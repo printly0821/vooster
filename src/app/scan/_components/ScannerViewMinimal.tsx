@@ -24,6 +24,7 @@ interface ScannerViewMinimalProps {
   onOpenSettings: () => void;
   onOpenHistory: () => void;
   onOpenInfo: () => void;
+  onOpenDisplays?: () => void;
   settings: ScannerSettings;
   scanStatus: ScanStatus;
   isPaused?: boolean;
@@ -40,6 +41,7 @@ export function ScannerViewMinimal({
   onOpenSettings,
   onOpenHistory,
   onOpenInfo,
+  onOpenDisplays,
   settings,
   scanStatus,
   isPaused,
@@ -50,6 +52,7 @@ export function ScannerViewMinimal({
       onOpenSettings={onOpenSettings}
       onOpenHistory={onOpenHistory}
       onOpenInfo={onOpenInfo}
+      onOpenDisplays={onOpenDisplays}
       settings={settings}
       scanStatus={scanStatus}
       isPaused={isPaused}
@@ -65,6 +68,7 @@ function ScannerFullscreenMinimal({
   onOpenSettings,
   onOpenHistory,
   onOpenInfo,
+  onOpenDisplays,
   settings,
   scanStatus,
   isPaused,
@@ -380,6 +384,7 @@ function ScannerFullscreenMinimal({
           onOpenSettings={onOpenSettings}
           onOpenHistory={onOpenHistory}
           onOpenInfo={onOpenInfo}
+          onOpenDisplays={onOpenDisplays}
         />
       </div>
     );
@@ -441,6 +446,7 @@ function ScannerFullscreenMinimal({
         onOpenSettings={onOpenSettings}
         onOpenHistory={onOpenHistory}
         onOpenInfo={onOpenInfo}
+        onOpenDisplays={onOpenDisplays}
       />
 
       {/* Layer 5: 하단 UI (BottomBar) */}

@@ -1,0 +1,44 @@
+# 주요 작업 피드백 및 상태 표시 구축
+
+**Task ID:** T-007
+**Status:** BACKLOG
+**Importance:** MUST
+**Complexity:** 7/10
+**Urgency:** 9/10
+**Dependencies:** T-006
+
+## Description
+
+### 요구사항
+- 로딩 성공 오류 상태에 따른 즉각 피드백 제공 스켈레톤 스피너 토스트 진동 상태 아이콘 포함
+- 접근성 WCAG 2.1 AA 기준 준수 aria live 키보드 조작 지원 감각적 피드백에 비의존적인 대체 표시 제공
+- 모바일 데스크톱 반응형 및 저사양 기기에서도 부하 최소화
+
+### 구현 상세
+- 전역 피드백 Provider 구현 ToastQueue with portal 위치 우상단 모바일에서는 하단 중앙 스와이프 닫기
+- 로딩 스켈레톤 컴포넌트 카드 리스트 이미지 프레임 텍스트 라인 포함 리듀스 모션일 때 애니메이션 최소화
+- 성공 피드백은 녹색 계열 아이콘 짧은 진동 15 제공 오류는 붉은 계열 아이콘과 명확한 원인 메시지 복구 안내 버튼
+- aria live polite assertive 채널 분리 중요도에 따라 할당 키보드 초점 이동과 트랩 방지
+- 네트워크 재시도 버튼 표준화 onRetry 콜백 주입형 컴포넌트로 재사용
+
+### 의사코드
+```pseudo
+function FeedbackProvider({ children }) { return <Context ...>{children}</Context> }
+
+function showToast(type, message, action) { enqueue({ id: uid(), type, message, action }) }
+
+function SkeletonCard() { return <div className='skeleton card' /> }
+
+function withFeedback(asyncOp) { try { startSpinner(); const res = await asyncOp(); showToast('success', '완료'); return res } catch(e) { showToast('error', mapMsg(e), { label: '재시도', onClick: retry }) } finally { stopSpinner() } }
+```
+
+### 테스트 전략
+- 단위 테스트 토스트 큐 동작 중복 합치기 자동 닫힘 타이머 포커스 이동 검증
+- 접근성 테스트 스크린리더로 라이브 영역 공지 확인 키보드 네비게이션 동작
+- E2E 시나리오 주문 조회 성공 실패 재시도 플로우에서 피드백이 적시에 표시되는지 확인
+- 성능 측정 애니메이션과 토스트 렌더가 메인 스레드 점유를 과도하게 증가시키지 않는지 확인
+
+---
+
+**Created:** 2025-10-11T01:49:07.937Z
+**Updated:** 2025-10-11T01:49:07.937Z

@@ -1,0 +1,48 @@
+# 썸네일 그리드 컴포넌트 개발 레이지 로딩 포함
+
+**Task ID:** T-008
+**Status:** BACKLOG
+**Importance:** MUST
+**Complexity:** 7/10
+**Urgency:** 8/10
+**Dependencies:** T-007
+
+## Description
+
+### 요구사항
+- 주문 상세 썸네일을 반응형 그리드로 표시 모바일 태블릿 데스크톱에서 최적 열수
+- 이미지 레이지 로딩 스켈레톤 프리로더 1대1 비율 라운드 처리 오류 폴백 제공
+- 클릭 시 이미지 뷰어로 전환할 수 있도록 콜백 제공 포커스 가능 요소로 접근성 확보
+
+### 구현 상세
+- CSS Grid auto fit minmax 사용 열폭 clamp로 브레이크포인트 없이 유연 대응 gap 조정
+- Next Image를 사용하여 최적화 sizes 속성으로 뷰포트별 적정 리소스 제공 priority는 상단 일부만
+- IntersectionObserver로 in view 시 placeholder에서 실제 이미지로 스왑 스켈레톤에서 부드럽게 전환
+- aspect ratio 1 1 유지 object fit cover border radius 디자인 가이드 반영
+- 오류시 onError에서 폴백 썸네일로 대체 alt 텍스트는 주문명과 인덱스 포함 키보드 엔터 스페이스 클릭 지원
+
+### 의사코드
+```pseudo
+function ThumbnailGrid({ images, onOpen }) {
+  return <ul className='grid'>
+    {images.map((src, i) => <ThumbnailItem key={i} src={src} index={i} onOpen={() => onOpen(i)} />)}
+  </ul>
+}
+
+function ThumbnailItem({ src, index, onOpen }) {
+  const { ref, inView } = useInView()
+  return <li ref={ref}>
+    {inView ? <img src={src} alt={`썸네일 ${index + 1}`} loading='lazy' onClick={onOpen} /> : <SkeletonSquare />}
+  </li>
+}
+```
+
+### 테스트 전략
+- 단위 테스트 이미지 로딩 성공 실패 시 폴백 처리와 alt 텍스트 확인 키보드 조작 가능 여부 검사
+- 통합 테스트 IntersectionObserver 모킹으로 인뷰 전환 시 렌더 변경 확인
+- 성능 테스트 한 주문당 다수 이미지 로딩 시 메모리와 네트워크 병렬성 점검 LCP 영향 평가
+
+---
+
+**Created:** 2025-10-11T01:49:07.937Z
+**Updated:** 2025-10-11T01:49:07.937Z
