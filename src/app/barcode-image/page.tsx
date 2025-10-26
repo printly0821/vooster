@@ -3,252 +3,267 @@
 import { MainLayout } from '@/components/layout';
 
 /**
- * 바코드 테스트용 이미지 페이지
+ * 바코드 그리드 인쇄 페이지
  *
- * 이 페이지를 스마트폰이나 다른 모니터에 띄워서
- * 바코드 스캐너로 테스트할 수 있습니다.
+ * 주문번호들을 그리드 형태로 배치하여
+ * 인쇄하기 쉽도록 구성된 페이지입니다.
  */
 export default function BarcodeImagePage() {
+  // 바코드 생성 할 주문번호들
+  const orderNumbers = [
+    '202510-BIZ-04464_38',
+    '202510-FUJ-00013_00',
+    '202510-FUJ-00016_00',
+    '202510-FUJ-00016_01',
+    '202510-FUJ-00015_00',
+    '202510-FUJ-00015_01',
+    '202510-FUJ-00015_02',
+    '202510-FUJ-00015_03',
+    '202510-FUJ-00015_05',
+    '202510-FUJ-00014_00',
+    '202510-FUJ-00013_01',
+    '202510-FUJ-00010_00',
+    '202510-FUJ-00009_00',
+  ];
+
   return (
     <MainLayout>
       <div style={{
-        padding: '40px',
-        textAlign: 'center',
-        minHeight: '100vh',
-      }}>
-      <h1 style={{ fontSize: '24px', marginBottom: '20px', color: 'black' }}>
-        📱 바코드 테스트 이미지
-      </h1>
-
-      <p style={{ marginBottom: '40px', color: '#666' }}>
-        이 페이지를 스마트폰이나 다른 화면에 띄우고<br />
-        PC 카메라로 스캔해보세요!
-      </p>
-
-      {/* QR Code - 주문번호 #1 */}
-      <div style={{ marginBottom: '60px' }}>
-        <h2 style={{ fontSize: '18px', marginBottom: '20px', color: 'black' }}>
-          📦 주문번호 QR 코드 #1
-        </h2>
-        <div style={{
-          backgroundColor: '#f9f9f9',
-          padding: '20px',
-          borderRadius: '8px',
-          marginBottom: '20px',
-          display: 'flex',
-          justifyContent: 'center',
-        }}>
-          <img
-            src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=202509-FUJ-0020_00"
-            alt="Order QR Code #1"
-            style={{
-              border: '2px solid #333',
-              padding: '10px',
-              backgroundColor: 'white',
-            }}
-          />
-        </div>
-        <p style={{ marginTop: '10px', color: '#333', fontSize: '16px', fontWeight: 'bold', textAlign: 'center' }}>
-          주문번호: <code style={{ backgroundColor: '#e8e8e8', padding: '4px 8px', borderRadius: '4px' }}>202509-FUJ-0020_00</code>
-        </p>
-        <p style={{ marginTop: '5px', color: '#666', fontSize: '14px', textAlign: 'center' }}>
-          QR 코드 | 스캔하면 /scan 페이지에서 자동 조회됩니다
-        </p>
-      </div>
-
-      {/* QR Code - 주문번호 #2 (신규) */}
-      <div style={{ marginBottom: '60px' }}>
-        <h2 style={{ fontSize: '18px', marginBottom: '20px', color: 'black' }}>
-          📦 주문번호 QR 코드 #2
-        </h2>
-        <div style={{
-          backgroundColor: '#f9f9f9',
-          padding: '20px',
-          borderRadius: '8px',
-          marginBottom: '20px',
-          display: 'flex',
-          justifyContent: 'center',
-        }}>
-          <img
-            src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=202510-BIZ-00804_00"
-            alt="Order QR Code #2"
-            style={{
-              border: '2px solid #333',
-              padding: '10px',
-              backgroundColor: 'white',
-            }}
-          />
-        </div>
-        <p style={{ marginTop: '10px', color: '#333', fontSize: '16px', fontWeight: 'bold', textAlign: 'center' }}>
-          주문번호: <code style={{ backgroundColor: '#e8e8e8', padding: '4px 8px', borderRadius: '4px' }}>202510-BIZ-00804_00</code>
-        </p>
-        <p style={{ marginTop: '5px', color: '#666', fontSize: '14px', textAlign: 'center' }}>
-          QR 코드 | 스캔하면 /scan 페이지에서 자동 조회됩니다
-        </p>
-      </div>
-
-      {/* QR Code 1 */}
-      <div style={{ marginBottom: '60px' }}>
-        <h2 style={{ fontSize: '18px', marginBottom: '20px', color: 'black' }}>
-          QR 코드 테스트 #1
-        </h2>
-        <img
-          src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=Hello%20Vooster%20QR%20Scanner!"
-          alt="QR Code 1"
-          style={{
-            border: '2px solid #ddd',
-            padding: '20px',
-            backgroundColor: 'white',
-          }}
-        />
-        <p style={{ marginTop: '10px', color: '#666', fontSize: '14px' }}>
-          데이터: "Hello Vooster QR Scanner!"
-        </p>
-      </div>
-
-      {/* QR Code 2 */}
-      <div style={{ marginBottom: '60px' }}>
-        <h2 style={{ fontSize: '18px', marginBottom: '20px', color: 'black' }}>
-          QR 코드 테스트 #2
-        </h2>
-        <img
-          src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://github.com/printly0821/vooster"
-          alt="QR Code 2"
-          style={{
-            border: '2px solid #ddd',
-            padding: '20px',
-            backgroundColor: 'white',
-          }}
-        />
-        <p style={{ marginTop: '10px', color: '#666', fontSize: '14px' }}>
-          데이터: "https://github.com/printly0821/vooster"
-        </p>
-      </div>
-
-      {/* Barcode - 주문번호 #1 */}
-      <div style={{ marginBottom: '60px' }}>
-        <h2 style={{ fontSize: '18px', marginBottom: '20px', color: 'black' }}>
-          📦 주문번호 바코드 #1 (Code 128)
-        </h2>
-        <div style={{
-          backgroundColor: '#f9f9f9',
-          padding: '20px',
-          borderRadius: '8px',
-          marginBottom: '20px',
-        }}>
-          <img
-            src="https://barcode.tec-it.com/barcode.ashx?data=202509-FUJ-0020_00&code=Code128&translate-esc=on"
-            alt="Order Barcode #1"
-            style={{
-              border: '2px solid #333',
-              padding: '20px',
-              backgroundColor: 'white',
-              width: '100%',
-              maxWidth: '400px',
-            }}
-          />
-        </div>
-        <p style={{ marginTop: '10px', color: '#333', fontSize: '16px', fontWeight: 'bold' }}>
-          주문번호: <code style={{ backgroundColor: '#e8e8e8', padding: '4px 8px', borderRadius: '4px' }}>202509-FUJ-0020_00</code>
-        </p>
-        <p style={{ marginTop: '5px', color: '#666', fontSize: '14px' }}>
-          형식: Code 128 | 스캔하면 /scan 페이지에서 자동 조회됩니다
-        </p>
-      </div>
-
-      {/* Barcode - 주문번호 #2 (신규) */}
-      <div style={{ marginBottom: '60px' }}>
-        <h2 style={{ fontSize: '18px', marginBottom: '20px', color: 'black' }}>
-          📦 주문번호 바코드 #2 (Code 128)
-        </h2>
-        <div style={{
-          backgroundColor: '#f9f9f9',
-          padding: '20px',
-          borderRadius: '8px',
-          marginBottom: '20px',
-        }}>
-          <img
-            src="https://barcode.tec-it.com/barcode.ashx?data=202510-BIZ-00804_00&code=Code128&translate-esc=on"
-            alt="Order Barcode #2"
-            style={{
-              border: '2px solid #333',
-              padding: '20px',
-              backgroundColor: 'white',
-              width: '100%',
-              maxWidth: '400px',
-            }}
-          />
-        </div>
-        <p style={{ marginTop: '10px', color: '#333', fontSize: '16px', fontWeight: 'bold' }}>
-          주문번호: <code style={{ backgroundColor: '#e8e8e8', padding: '4px 8px', borderRadius: '4px' }}>202510-BIZ-00804_00</code>
-        </p>
-        <p style={{ marginTop: '5px', color: '#666', fontSize: '14px' }}>
-          형식: Code 128 | 스캔하면 /scan 페이지에서 자동 조회됩니다
-        </p>
-      </div>
-
-      {/* Barcode (Code 128) */}
-      <div style={{ marginBottom: '60px' }}>
-        <h2 style={{ fontSize: '18px', marginBottom: '20px', color: 'black' }}>
-          바코드 테스트 (Code 128)
-        </h2>
-        <img
-          src="https://barcode.tec-it.com/barcode.ashx?data=VOOSTER2024&code=Code128&translate-esc=on"
-          alt="Barcode"
-          style={{
-            border: '2px solid #ddd',
-            padding: '20px',
-            backgroundColor: 'white',
-          }}
-        />
-        <p style={{ marginTop: '10px', color: '#666', fontSize: '14px' }}>
-          데이터: "VOOSTER2024"
-        </p>
-      </div>
-
-      {/* EAN-13 Barcode */}
-      <div style={{ marginBottom: '60px' }}>
-        <h2 style={{ fontSize: '18px', marginBottom: '20px', color: 'black' }}>
-          EAN-13 바코드 (일반 제품 바코드)
-        </h2>
-        <img
-          src="https://barcode.tec-it.com/barcode.ashx?data=4006381333634&code=EAN13"
-          alt="EAN13 Barcode"
-          style={{
-            border: '2px solid #ddd',
-            padding: '20px',
-            backgroundColor: 'white',
-          }}
-        />
-        <p style={{ marginTop: '10px', color: '#666', fontSize: '14px' }}>
-          데이터: "4006381333634" (예시 EAN-13)
-        </p>
-      </div>
-
-      <div style={{
-        marginTop: '60px',
         padding: '20px',
-        backgroundColor: '#e8f4f8',
-        borderRadius: '8px',
-        borderLeft: '4px solid #2196F3',
+        minHeight: '100vh',
+        backgroundColor: '#ffffff',
       }}>
-        <p style={{ color: '#0d47a1', fontSize: '14px', margin: '0' }}>
-          💡 <strong>사용 방법:</strong>
-        </p>
-        <p style={{ color: '#666', fontSize: '13px', margin: '8px 0 0 0' }}>
-          <strong>방법 1: 빠른 조회 (추천)</strong><br />
-          1. 이 페이지를 스마트폰이나 다른 모니터에 띄우기<br />
-          2. <a href="/scan" style={{ color: '#2196F3', fontWeight: 'bold' }}>/scan 페이지</a>에서 바코드 스캔<br />
-          3. 제작의뢰서가 자동으로 표시됨 ✨<br />
-          <br />
-          <strong>방법 2: 테스트 모드</strong><br />
-          1. 이 페이지를 스마트폰이나 다른 모니터에 띄우기<br />
-          2. <a href="/camera-test" style={{ color: '#2196F3', fontWeight: 'bold' }}>/camera-test 페이지</a>에서 바코드 스캐너 시작<br />
-          3. 카메라를 위 이미지들에 비추기<br />
-          4. 콘솔(F12)에서 인식 결과 확인하기
-        </p>
+        <div style={{
+          maxWidth: '1400px',
+          margin: '0 auto',
+        }}>
+          {/* 헤더 */}
+          <div style={{
+            textAlign: 'center',
+            marginBottom: '30px',
+            paddingBottom: '20px',
+            borderBottom: '2px solid #333',
+            '@media print': {
+              marginBottom: '20px',
+              paddingBottom: '10px',
+            },
+          }}>
+            <h1 style={{
+              fontSize: '28px',
+              margin: '0 0 10px 0',
+              color: '#000',
+              fontWeight: 'bold',
+            }}>
+              📦 주문번호 바코드 인쇄
+            </h1>
+            <p style={{
+              fontSize: '14px',
+              color: '#666',
+              margin: '0',
+            }}>
+              {orderNumbers.length}개 주문 | Code 128 바코드
+            </p>
+          </div>
+
+          {/* 바코드 그리드 */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '20px',
+            marginBottom: '40px',
+            '@media print': {
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '15px',
+              marginBottom: '0',
+            },
+          }}>
+            {orderNumbers.map((orderNumber, index) => (
+              <div
+                key={orderNumber}
+                style={{
+                  border: '1px solid #ddd',
+                  padding: '20px',
+                  borderRadius: '8px',
+                  backgroundColor: '#fafafa',
+                  textAlign: 'center',
+                  pageBreakInside: 'avoid',
+                  '@media print': {
+                    border: '1px solid #999',
+                    padding: '15px',
+                    borderRadius: '4px',
+                    backgroundColor: '#fff',
+                  },
+                }}
+              >
+                {/* 바코드 */}
+                <div style={{
+                  marginBottom: '12px',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  minHeight: '80px',
+                  '@media print': {
+                    marginBottom: '8px',
+                    minHeight: '60px',
+                  },
+                }}>
+                  <img
+                    src={`https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(
+                      orderNumber
+                    )}&code=Code128&translate-esc=on&unit=Cm&dpi=300`}
+                    alt={`Barcode ${orderNumber}`}
+                    style={{
+                      maxWidth: '100%',
+                      height: 'auto',
+                      display: 'block',
+                    }}
+                  />
+                </div>
+
+                {/* 주문번호 텍스트 */}
+                <div style={{
+                  backgroundColor: '#fff',
+                  padding: '10px 8px',
+                  borderRadius: '4px',
+                  border: '1px solid #e0e0e0',
+                }}>
+                  <p style={{
+                    margin: '0 0 5px 0',
+                    fontSize: '12px',
+                    color: '#999',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                  }}>
+                    주문번호
+                  </p>
+                  <p style={{
+                    margin: '0',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    color: '#000',
+                    fontFamily: 'monospace',
+                    wordBreak: 'break-all',
+                  }}>
+                    {orderNumber}
+                  </p>
+                </div>
+
+                {/* 번호 표시 */}
+                <p style={{
+                  margin: '8px 0 0 0',
+                  fontSize: '11px',
+                  color: '#aaa',
+                }}>
+                  #{index + 1}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* 인쇄 안내 */}
+          <div style={{
+            backgroundColor: '#e3f2fd',
+            border: '1px solid #2196F3',
+            borderRadius: '8px',
+            padding: '20px',
+            marginTop: '40px',
+            color: '#0d47a1',
+            '@media print': {
+              display: 'none',
+            },
+          }}>
+            <h3 style={{
+              margin: '0 0 12px 0',
+              fontSize: '16px',
+              fontWeight: 'bold',
+            }}>
+              💡 인쇄 방법
+            </h3>
+            <ul style={{
+              margin: '0',
+              paddingLeft: '20px',
+              lineHeight: '1.6',
+              fontSize: '14px',
+            }}>
+              <li>Ctrl+P 또는 Cmd+P를 눌러 인쇄 대화 열기</li>
+              <li>용지 크기: A4 권장</li>
+              <li>방향: 가로(Landscape) 권장</li>
+              <li>여백: 최소(Minimal) 또는 없음(None) 선택</li>
+              <li>배경 그래픽: 활성화</li>
+              <li>인쇄 미리보기에서 모든 바코드가 표시되는지 확인 후 인쇄</li>
+            </ul>
+          </div>
+
+          {/* 스캔 안내 */}
+          <div style={{
+            backgroundColor: '#f3e5f5',
+            border: '1px solid #9c27b0',
+            borderRadius: '8px',
+            padding: '20px',
+            marginTop: '20px',
+            color: '#4a148c',
+            '@media print': {
+              display: 'none',
+            },
+          }}>
+            <h3 style={{
+              margin: '0 0 12px 0',
+              fontSize: '16px',
+              fontWeight: 'bold',
+            }}>
+              📱 스캔 방법
+            </h3>
+            <p style={{
+              margin: '0 0 10px 0',
+              fontSize: '14px',
+            }}>
+              생성된 바코드를 스캔하려면:
+            </p>
+            <ol style={{
+              margin: '0',
+              paddingLeft: '20px',
+              lineHeight: '1.6',
+              fontSize: '14px',
+            }}>
+              <li>
+                <a
+                  href="/scan"
+                  style={{
+                    color: '#9c27b0',
+                    fontWeight: 'bold',
+                    textDecoration: 'none',
+                  }}
+                >
+                  /scan 페이지
+                </a>
+                로 이동
+              </li>
+              <li>카메라 권한 승인</li>
+              <li>바코드에 카메라를 가져다대기</li>
+              <li>자동으로 주문 정보 조회됨</li>
+            </ol>
+          </div>
+        </div>
       </div>
-      </div>
+
+      {/* 인쇄 스타일 */}
+      <style>{`
+        @media print {
+          body {
+            margin: 0;
+            padding: 0;
+            background: white;
+          }
+
+          div {
+            break-inside: avoid;
+          }
+
+          img {
+            break-inside: avoid;
+          }
+        }
+      `}</style>
     </MainLayout>
   );
 }
